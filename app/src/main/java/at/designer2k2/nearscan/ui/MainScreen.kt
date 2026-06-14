@@ -124,7 +124,10 @@ fun MainScreen(
             initialLat = state.latitude,
             initialLon = state.longitude,
             initialAlt = state.altitude,
-            onGetGpsFix = { /* TODO: trigger single GPS fix via LocationHelper */ },
+            gpsFix = state.gpsFixResult,
+            onGpsFixConsumed = viewModel::consumeGpsFix,
+            isGettingFix = state.isGettingFix,
+            onGetGpsFix = viewModel::getGpsFix,
             onSave = { lat, lon, alt ->
                 viewModel.updateLocation(lat, lon, alt)
                 showLocationDialog = false

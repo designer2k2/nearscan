@@ -6,10 +6,12 @@ import androidx.lifecycle.viewModelScope
 import at.designer2k2.nearscan.db.BtScanDao
 import at.designer2k2.nearscan.db.CellScanDao
 import at.designer2k2.nearscan.db.WifiScanDao
+import at.designer2k2.nearscan.location.LocationHelper
 import at.designer2k2.nearscan.prefs.NearScanSettings
 import at.designer2k2.nearscan.prefs.SettingsDataStore
 import at.designer2k2.nearscan.service.ScanService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +31,8 @@ data class MainUiState(
     val totalRecords: Long = 0,
     val sessionSeconds: Long = 0,
     val settings: NearScanSettings = NearScanSettings(),
+    val isGettingFix: Boolean = false,
+    val gpsFixResult: Triple<Double, Double, Double>? = null,  // lat, lon, alt — consumed once then cleared
 )
 
 @HiltViewModel
@@ -38,6 +42,7 @@ class MainViewModel @Inject constructor(
     wifiScanDao: WifiScanDao,
     btScanDao: BtScanDao,
     cellScanDao: CellScanDao,
+    private val locationHelper: LocationHelper,
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(MainUiState())
@@ -78,6 +83,21 @@ class MainViewModel @Inject constructor(
             }
         }
 
+        // Per-second ticker so the session timer advances even without scan events
+        viewModelScope.launch {
+            while (true) {
+                delay(1_000L)
+                val status = ScanService.statusFlow.value
+                if (status.isRunning && status.sessionStartMs > 0L) {
+                    _uiState.update {
+                        it.copy(
+                            sessionSeconds = (System.currentTimeMillis() - status.sessionStartMs) / 1000,
+                        )
+                    }
+                }
+            }
+        }
+
         // Total record count across all tables
         viewModelScope.launch {
             combine(
@@ -103,6 +123,27 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             settingsDataStore.updateLocation(lat, lon, alt)
         }
+    }
+
+    fun getGpsFix() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isGettingFix = true) }
+            val loc = locationHelper.getSingleFix(getApplication())
+            if (loc != null) {
+                _uiState.update {
+                    it.copy(
+                        isGettingFix = false,
+                        gpsFixResult = Triple(loc.latitude, loc.longitude, loc.altitude),
+                    )
+                }
+            } else {
+                _uiState.update { it.copy(isGettingFix = false) }
+            }
+        }
+    }
+
+    fun consumeGpsFix() {
+        _uiState.update { it.copy(gpsFixResult = null) }
     }
 
     fun updateSettings(settings: NearScanSettings) {

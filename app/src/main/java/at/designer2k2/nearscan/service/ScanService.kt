@@ -14,6 +14,11 @@ import at.designer2k2.nearscan.R
 import at.designer2k2.nearscan.db.BtScanDao
 import at.designer2k2.nearscan.db.CellScanDao
 import at.designer2k2.nearscan.db.WifiScanDao
+import at.designer2k2.nearscan.extra.ExtraFields
+import at.designer2k2.nearscan.extra.ExtraFieldsCollector
+import at.designer2k2.nearscan.mqtt.MqttClient
+import at.designer2k2.nearscan.mqtt.MqttPublisher
+import at.designer2k2.nearscan.prefs.NearScanSettings
 import at.designer2k2.nearscan.prefs.SettingsDataStore
 import at.designer2k2.nearscan.scanner.BleScanner
 import at.designer2k2.nearscan.scanner.BluetoothScanner
@@ -48,9 +53,19 @@ class ScanService : Service() {
     @Inject lateinit var wifiScanDao: WifiScanDao
     @Inject lateinit var btScanDao: BtScanDao
     @Inject lateinit var cellScanDao: CellScanDao
+    @Inject lateinit var mqttClient: MqttClient
+    @Inject lateinit var mqttPublisher: MqttPublisher
+    @Inject lateinit var extraFieldsCollector: ExtraFieldsCollector
 
     private val scope = CoroutineScope(SupervisorJob())
     private val jobs = mutableListOf<Job>()
+
+    // Live snapshot of settings, kept up to date by a collector so location and MQTT
+    // can be toggled mid-session.
+    @Volatile private var currentSettings: NearScanSettings = NearScanSettings()
+    private var currentLat: Double? = null
+    private var currentLon: Double? = null
+    private var currentAlt: Double? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -72,13 +87,36 @@ class ScanService : Service() {
 
         jobs += scope.launch {
             val settings = settingsDataStore.settings.first()
+            currentSettings = settings
+            currentLat = settings.latitude
+            currentLon = settings.longitude
+            currentAlt = settings.altitude
+
+            // Keep settings + location live so changes mid-session are picked up.
+            jobs += launch {
+                settingsDataStore.settings.collect { s ->
+                    currentSettings = s
+                    currentLat = s.latitude
+                    currentLon = s.longitude
+                    currentAlt = s.altitude
+                }
+            }
+
+            if (settings.mqttEnabled && settings.mqttBroker.isNotBlank()) {
+                runCatching { mqttClient.connect(settings.mqttBroker) }
+            }
 
             if (settings.scanWifiEnabled) {
                 jobs += launch {
                     loop(settings.intervalWifiSec) {
                         val rows = wifiScanner.scan()
-                        if (rows.isNotEmpty()) wifiScanDao.insertAll(rows)
-                        status.update { it.copy(wifiCount = it.wifiCount + rows.size) }
+                        val stamped = rows.map {
+                            it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
+                        }
+                        if (stamped.isNotEmpty()) wifiScanDao.insertAll(stamped)
+                        status.update { it.copy(wifiCount = it.wifiCount + stamped.size) }
+                        publishBatch(stamped)
+                        updateNotification()
                     }
                 }
             }
@@ -86,8 +124,13 @@ class ScanService : Service() {
                 jobs += launch {
                     loop(settings.intervalBtSec) {
                         val rows = bluetoothScanner.scan()
-                        if (rows.isNotEmpty()) btScanDao.insertAll(rows)
-                        status.update { it.copy(btCount = it.btCount + rows.size) }
+                        val stamped = rows.map {
+                            it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
+                        }
+                        if (stamped.isNotEmpty()) btScanDao.insertAll(stamped)
+                        status.update { it.copy(btCount = it.btCount + stamped.size) }
+                        publishBatch(stamped)
+                        updateNotification()
                     }
                 }
             }
@@ -95,8 +138,13 @@ class ScanService : Service() {
                 jobs += launch {
                     loop(settings.intervalBleSec) {
                         val rows = bleScanner.scan()
-                        if (rows.isNotEmpty()) btScanDao.insertAll(rows)
-                        status.update { it.copy(btCount = it.btCount + rows.size) }
+                        val stamped = rows.map {
+                            it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
+                        }
+                        if (stamped.isNotEmpty()) btScanDao.insertAll(stamped)
+                        status.update { it.copy(btCount = it.btCount + stamped.size) }
+                        publishBatch(stamped)
+                        updateNotification()
                     }
                 }
             }
@@ -104,11 +152,29 @@ class ScanService : Service() {
                 jobs += launch {
                     loop(settings.intervalCellSec) {
                         val rows = cellScanner.scan()
-                        if (rows.isNotEmpty()) cellScanDao.insertAll(rows)
-                        status.update { it.copy(cellCount = it.cellCount + rows.size) }
+                        val stamped = rows.map {
+                            it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
+                        }
+                        if (stamped.isNotEmpty()) cellScanDao.insertAll(stamped)
+                        status.update { it.copy(cellCount = it.cellCount + stamped.size) }
+                        publishBatch(stamped)
+                        updateNotification()
                     }
                 }
             }
+        }
+    }
+
+    /** Publishes a stamped batch over MQTT when enabled, including any enabled extra fields. */
+    private fun publishBatch(entities: List<Any>) {
+        if (entities.isEmpty()) return
+        val settings = currentSettings
+        if (!settings.mqttEnabled) return
+        val extras: ExtraFields? =
+            if (settings.anyExtraFieldEnabled) runCatching { extraFieldsCollector.collect(settings) }.getOrNull()
+            else null
+        entities.forEach { entity ->
+            mqttPublisher.publish(settings.mqttTopic, entity, currentLat, currentLon, currentAlt, extras)
         }
     }
 
@@ -123,6 +189,7 @@ class ScanService : Service() {
     private fun stopScanning() {
         jobs.forEach { it.cancel() }
         jobs.clear()
+        runCatching { mqttClient.disconnect() }
         status.update { ScanStatus() }
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -138,12 +205,7 @@ class ScanService : Service() {
             )
             nm.createNotificationChannel(channel)
         }
-        val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.notification_title))
-            .setContentText(getString(R.string.notification_running))
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setOngoing(true)
-            .build()
+        val notification = buildNotification(getString(R.string.notification_running))
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
@@ -152,10 +214,30 @@ class ScanService : Service() {
         }
     }
 
+    private fun buildNotification(contentText: String): Notification =
+        NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.notification_title))
+            .setContentText(contentText)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setOngoing(true)
+            .build()
+
+    /** Refreshes the foreground notification with live per-type counts. */
+    private fun updateNotification() {
+        val s = status.value
+        if (!s.isRunning) return
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notification = buildNotification(
+            "WiFi: ${s.wifiCount}  BT: ${s.btCount}  Cell: ${s.cellCount}",
+        )
+        nm.notify(NOTIFICATION_ID, notification)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         jobs.forEach { it.cancel() }
         scope.coroutineContext[Job]?.cancel()
+        runCatching { mqttClient.disconnect() }
         status.update { ScanStatus() }
     }
 

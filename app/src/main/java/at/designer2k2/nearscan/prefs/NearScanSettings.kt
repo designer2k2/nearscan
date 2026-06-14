@@ -65,4 +65,10 @@ data class NearScanSettings(
     val extraTilt: Boolean = false,
     val extraScanDuration: Boolean = false,
     val extraMemory: Boolean = false,
-)
+) {
+    /** True when at least one optional extra logged field is enabled. */
+    val anyExtraFieldEnabled: Boolean
+        get() = extraBatteryLevel || extraBatteryCharging || extraBatteryTemp ||
+            extraScreenOn || extraMobileData || extraNetworkType || extraConnectedSsid ||
+            extraHeading || extraTilt || extraScanDuration || extraMemory
+}

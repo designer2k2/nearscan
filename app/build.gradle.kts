@@ -51,6 +51,10 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -86,4 +90,10 @@ dependencies {
 
     // MQTT
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
+
+    // Unit testing
+    testImplementation(libs.junit4)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
 }

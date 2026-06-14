@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NearScan</string>
+    <string name="start">开始</string>
+    <string name="stop">停止</string>
+    <string name="settings">设置</string>
+    <string name="set_location">设置位置</string>
+    <string name="advanced_settings">高级设置</string>
+    <string name="counter_wifi">WiFi</string>
+    <string name="counter_bt">蓝牙</string>
+    <string name="counter_cell">基站</string>
+    <string name="session_timer">会话</string>
+    <string name="total_records">总记录数</string>
+    <string name="latitude">纬度</string>
+    <string name="longitude">经度</string>
+    <string name="altitude">海拔</string>
+    <string name="get_gps_fix">获取GPS定位</string>
+    <string name="save">保存</string>
+    <string name="cancel">取消</string>
+    <string name="scan_wifi">WiFi</string>
+    <string name="scan_bt">经典蓝牙</string>
+    <string name="scan_ble">低功耗蓝牙</string>
+    <string name="scan_cell">基站</string>
+    <string name="export_format">导出格式</string>
+    <string name="mqtt_enable">MQTT</string>
+    <string name="mqtt_broker">服务器</string>
+    <string name="mqtt_topic">主题</string>
+    <string name="keep_screen_on">保持屏幕常亮</string>
+    <string name="dedup">去重</string>
+    <string name="notification_channel_name">扫描中</string>
+    <string name="notification_title">NearScan</string>
+    <string name="notification_running">正在扫描射频环境</string>
+    <string name="no_location_set">未设置位置</string>
+    <string name="notification_counts">WiFi: %1$d  BT: %2$d  基站: %3$d</string>
+</resources>

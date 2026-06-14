@@ -36,4 +36,6 @@
     <string name="notification_channel_name">Scanning</string>
     <string name="notification_title">NearScan</string>
     <string name="notification_running">Scanning the RF environment</string>
+    <string name="no_location_set">No location set</string>
+    <string name="notification_counts">WiFi: %1$d  BT: %2$d  Cell: %3$d</string>
 </resources>

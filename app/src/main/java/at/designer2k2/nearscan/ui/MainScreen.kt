@@ -154,7 +154,7 @@ private fun LocationRow(
             val coords = if (latitude != null && longitude != null) {
                 "%.5f, %.5f".format(latitude, longitude)
             } else {
-                "No location set"
+                stringResource(R.string.no_location_set)
             }
             Text(text = coords, style = MaterialTheme.typography.bodyLarge)
             OutlinedButton(onClick = onSetLocation) {

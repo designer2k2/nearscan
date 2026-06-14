@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NearScan</string>
+    <string name="start">시작</string>
+    <string name="stop">중지</string>
+    <string name="settings">설정</string>
+    <string name="set_location">위치 설정</string>
+    <string name="advanced_settings">고급 설정</string>
+    <string name="counter_wifi">WiFi</string>
+    <string name="counter_bt">BT</string>
+    <string name="counter_cell">셀</string>
+    <string name="session_timer">세션</string>
+    <string name="total_records">총 레코드</string>
+    <string name="latitude">위도</string>
+    <string name="longitude">경도</string>
+    <string name="altitude">고도</string>
+    <string name="get_gps_fix">GPS 수신</string>
+    <string name="save">저장</string>
+    <string name="cancel">취소</string>
+    <string name="scan_wifi">WiFi</string>
+    <string name="scan_bt">블루투스 클래식</string>
+    <string name="scan_ble">BLE</string>
+    <string name="scan_cell">기지국</string>
+    <string name="export_format">내보내기 형식</string>
+    <string name="mqtt_enable">MQTT</string>
+    <string name="mqtt_broker">브로커</string>
+    <string name="mqtt_topic">주제</string>
+    <string name="keep_screen_on">화면 켜짐 유지</string>
+    <string name="dedup">중복 제거</string>
+    <string name="notification_channel_name">스캔 중</string>
+    <string name="notification_title">NearScan</string>
+    <string name="notification_running">RF 환경 스캔 중</string>
+    <string name="no_location_set">위치 미설정</string>
+    <string name="notification_counts">WiFi: %1$d  BT: %2$d  셀: %3$d</string>
+</resources>

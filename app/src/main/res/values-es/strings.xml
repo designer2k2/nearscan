@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NearScan</string>
+    <string name="start">INICIAR</string>
+    <string name="stop">DETENER</string>
+    <string name="settings">Ajustes</string>
+    <string name="set_location">Establecer ubicación</string>
+    <string name="advanced_settings">Ajustes avanzados</string>
+    <string name="counter_wifi">WiFi</string>
+    <string name="counter_bt">BT</string>
+    <string name="counter_cell">Celular</string>
+    <string name="session_timer">Sesión</string>
+    <string name="total_records">Registros totales</string>
+    <string name="latitude">Latitud</string>
+    <string name="longitude">Longitud</string>
+    <string name="altitude">Altitud</string>
+    <string name="get_gps_fix">Obtener GPS</string>
+    <string name="save">Guardar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="scan_wifi">WiFi</string>
+    <string name="scan_bt">Bluetooth clásico</string>
+    <string name="scan_ble">BLE</string>
+    <string name="scan_cell">Torres celulares</string>
+    <string name="export_format">Formato de exportación</string>
+    <string name="mqtt_enable">MQTT</string>
+    <string name="mqtt_broker">Servidor</string>
+    <string name="mqtt_topic">Tema</string>
+    <string name="keep_screen_on">Mantener pantalla encendida</string>
+    <string name="dedup">Deduplicar</string>
+    <string name="notification_channel_name">Escaneando</string>
+    <string name="notification_title">NearScan</string>
+    <string name="notification_running">Escaneando el entorno de RF</string>
+    <string name="no_location_set">Sin ubicación establecida</string>
+    <string name="notification_counts">WiFi: %1$d  BT: %2$d  Cel: %3$d</string>
+</resources>

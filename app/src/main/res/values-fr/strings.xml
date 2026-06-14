@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NearScan</string>
+    <string name="start">D\u00c9MARRER</string>
+    <string name="stop">ARR\u00caTER</string>
+    <string name="settings">Paramètres</string>
+    <string name="set_location">Définir la position</string>
+    <string name="advanced_settings">Paramètres avancés</string>
+    <string name="counter_wifi">WiFi</string>
+    <string name="counter_bt">BT</string>
+    <string name="counter_cell">Cellulaire</string>
+    <string name="session_timer">Session</string>
+    <string name="total_records">Total des enregistrements</string>
+    <string name="latitude">Latitude</string>
+    <string name="longitude">Longitude</string>
+    <string name="altitude">Altitude</string>
+    <string name="get_gps_fix">Obtenir le GPS</string>
+    <string name="save">Enregistrer</string>
+    <string name="cancel">Annuler</string>
+    <string name="scan_wifi">WiFi</string>
+    <string name="scan_bt">Bluetooth classique</string>
+    <string name="scan_ble">BLE</string>
+    <string name="scan_cell">Antennes relais</string>
+    <string name="export_format">Format d\'exportation</string>
+    <string name="mqtt_enable">MQTT</string>
+    <string name="mqtt_broker">Courtier</string>
+    <string name="mqtt_topic">Sujet</string>
+    <string name="keep_screen_on">Garder l\'écran allumé</string>
+    <string name="dedup">Dédupliquer</string>
+    <string name="notification_channel_name">Analyse en cours</string>
+    <string name="notification_title">NearScan</string>
+    <string name="notification_running">Analyse de l\'environnement RF</string>
+    <string name="no_location_set">Aucune position définie</string>
+    <string name="notification_counts">WiFi : %1$d  BT : %2$d  Cell : %3$d</string>
+</resources>

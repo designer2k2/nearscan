@@ -12,6 +12,10 @@ activityCompose = "1.9.0"
 coroutines = "1.8.0"
 coreKtx = "1.13.1"
 pahoMqtt = "1.2.5"
+junit4 = "4.13.2"
+mockk = "1.13.11"
+coroutinesTest = "1.8.0"
+turbine = "1.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -41,6 +45,11 @@ datastore-preferences = { group = "androidx.datastore", name = "datastore-prefer
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 
 paho-mqtt = { group = "org.eclipse.paho", name = "org.eclipse.paho.client.mqttv3", version.ref = "pahoMqtt" }
+
+junit4 = { group = "junit", name = "junit", version.ref = "junit4" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

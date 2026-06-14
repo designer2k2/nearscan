@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NearScan</string>
+    <string name="start">STARTEN</string>
+    <string name="stop">STOPPEN</string>
+    <string name="settings">Einstellungen</string>
+    <string name="set_location">Standort festlegen</string>
+    <string name="advanced_settings">Erweiterte Einstellungen</string>
+    <string name="counter_wifi">WLAN</string>
+    <string name="counter_bt">BT</string>
+    <string name="counter_cell">Mobilfunk</string>
+    <string name="session_timer">Sitzung</string>
+    <string name="total_records">Datensätze gesamt</string>
+    <string name="latitude">Breitengrad</string>
+    <string name="longitude">Längengrad</string>
+    <string name="altitude">Höhe</string>
+    <string name="get_gps_fix">GPS-Fix ermitteln</string>
+    <string name="save">Speichern</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="scan_wifi">WLAN</string>
+    <string name="scan_bt">Bluetooth Classic</string>
+    <string name="scan_ble">BLE</string>
+    <string name="scan_cell">Mobilfunkmasten</string>
+    <string name="export_format">Exportformat</string>
+    <string name="mqtt_enable">MQTT</string>
+    <string name="mqtt_broker">Broker</string>
+    <string name="mqtt_topic">Thema</string>
+    <string name="keep_screen_on">Bildschirm anlassen</string>
+    <string name="dedup">Deduplizieren</string>
+    <string name="notification_channel_name">Scannt</string>
+    <string name="notification_title">NearScan</string>
+    <string name="notification_running">RF-Umgebung wird gescannt</string>
+    <string name="no_location_set">Kein Standort festgelegt</string>
+    <string name="notification_counts">WLAN: %1$d  BT: %2$d  Mobilfunk: %3$d</string>
+</resources>

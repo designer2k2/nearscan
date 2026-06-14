@@ -228,7 +228,7 @@ class ScanService : Service() {
         if (!s.isRunning) return
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notification = buildNotification(
-            "WiFi: ${s.wifiCount}  BT: ${s.btCount}  Cell: ${s.cellCount}",
+            getString(R.string.notification_counts, s.wifiCount, s.btCount, s.cellCount),
         )
         nm.notify(NOTIFICATION_ID, notification)
     }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shell theme; Compose owns the actual theming via NearScanTheme. -->
+    <style name="Theme.NearScan" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#0D1B2A</item>
+    </style>
+</resources>

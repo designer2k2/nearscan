@@ -1,0 +1,39 @@
+<resources>
+    <string name="app_name">NearScan</string>
+
+    <string name="start">START</string>
+    <string name="stop">STOP</string>
+    <string name="settings">Settings</string>
+    <string name="set_location">Set Location</string>
+    <string name="advanced_settings">Advanced Settings</string>
+
+    <string name="counter_wifi">WiFi</string>
+    <string name="counter_bt">BT</string>
+    <string name="counter_cell">Cell</string>
+
+    <string name="session_timer">Session</string>
+    <string name="total_records">Total records</string>
+
+    <string name="latitude">Latitude</string>
+    <string name="longitude">Longitude</string>
+    <string name="altitude">Altitude</string>
+    <string name="get_gps_fix">Get GPS Fix</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="scan_wifi">WiFi</string>
+    <string name="scan_bt">BT Classic</string>
+    <string name="scan_ble">BLE</string>
+    <string name="scan_cell">Cell</string>
+
+    <string name="export_format">Export format</string>
+    <string name="mqtt_enable">MQTT</string>
+    <string name="mqtt_broker">Broker</string>
+    <string name="mqtt_topic">Topic</string>
+    <string name="keep_screen_on">Keep screen on</string>
+    <string name="dedup">Deduplicate</string>
+
+    <string name="notification_channel_name">Scanning</string>
+    <string name="notification_title">NearScan</string>
+    <string name="notification_running">Scanning the RF environment</string>
+</resources>

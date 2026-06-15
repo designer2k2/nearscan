@@ -16,6 +16,7 @@ import at.designer2k2.nearscan.db.CellScanDao
 import at.designer2k2.nearscan.db.WifiScanDao
 import at.designer2k2.nearscan.extra.ExtraFields
 import at.designer2k2.nearscan.extra.ExtraFieldsCollector
+import at.designer2k2.nearscan.ipc.TaskerBroadcaster
 import at.designer2k2.nearscan.mqtt.MqttClient
 import at.designer2k2.nearscan.mqtt.MqttPublisher
 import at.designer2k2.nearscan.prefs.NearScanSettings
@@ -56,6 +57,7 @@ class ScanService : Service() {
     @Inject lateinit var mqttClient: MqttClient
     @Inject lateinit var mqttPublisher: MqttPublisher
     @Inject lateinit var extraFieldsCollector: ExtraFieldsCollector
+    @Inject lateinit var taskerBroadcaster: TaskerBroadcaster
 
     private val scope = CoroutineScope(SupervisorJob())
     private val jobs = mutableListOf<Job>()
@@ -83,7 +85,9 @@ class ScanService : Service() {
 
     private fun startScanning() {
         if (status.value.isRunning) return
+        taskerBroadcaster.reset()
         status.update { it.copy(isRunning = true, sessionStartMs = System.currentTimeMillis()) }
+        taskerBroadcaster.onScanStarted()
 
         jobs += scope.launch {
             val settings = settingsDataStore.settings.first()
@@ -117,6 +121,9 @@ class ScanService : Service() {
                         status.update { it.copy(wifiCount = it.wifiCount + stamped.size) }
                         publishBatch(stamped)
                         updateNotification()
+                        taskerBroadcaster.onNewWifi(stamped)
+                        val s = status.value
+                        taskerBroadcaster.onRoundComplete(s.wifiCount, s.btCount, s.cellCount)
                     }
                 }
             }
@@ -131,6 +138,9 @@ class ScanService : Service() {
                         status.update { it.copy(btCount = it.btCount + stamped.size) }
                         publishBatch(stamped)
                         updateNotification()
+                        taskerBroadcaster.onNewBt(stamped)
+                        val s = status.value
+                        taskerBroadcaster.onRoundComplete(s.wifiCount, s.btCount, s.cellCount)
                     }
                 }
             }
@@ -145,6 +155,9 @@ class ScanService : Service() {
                         status.update { it.copy(btCount = it.btCount + stamped.size) }
                         publishBatch(stamped)
                         updateNotification()
+                        taskerBroadcaster.onNewBle(stamped)
+                        val s = status.value
+                        taskerBroadcaster.onRoundComplete(s.wifiCount, s.btCount, s.cellCount)
                     }
                 }
             }
@@ -159,6 +172,9 @@ class ScanService : Service() {
                         status.update { it.copy(cellCount = it.cellCount + stamped.size) }
                         publishBatch(stamped)
                         updateNotification()
+                        taskerBroadcaster.onNewCell(stamped)
+                        val s = status.value
+                        taskerBroadcaster.onRoundComplete(s.wifiCount, s.btCount, s.cellCount)
                     }
                 }
             }
@@ -187,9 +203,13 @@ class ScanService : Service() {
     }
 
     private fun stopScanning() {
+        val s = status.value
+        val durationS = if (s.sessionStartMs > 0L) (System.currentTimeMillis() - s.sessionStartMs) / 1000L else 0L
         jobs.forEach { it.cancel() }
         jobs.clear()
         runCatching { mqttClient.disconnect() }
+        taskerBroadcaster.onScanStopped(s.wifiCount, s.btCount, s.cellCount, durationS)
+        taskerBroadcaster.reset()
         status.update { ScanStatus() }
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -235,6 +255,13 @@ class ScanService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        // Fire SCAN_STOPPED if the OS kills the service unexpectedly.
+        if (status.value.isRunning) {
+            val s = status.value
+            val durationS = if (s.sessionStartMs > 0L) (System.currentTimeMillis() - s.sessionStartMs) / 1000L else 0L
+            taskerBroadcaster.onScanStopped(s.wifiCount, s.btCount, s.cellCount, durationS)
+            taskerBroadcaster.reset()
+        }
         jobs.forEach { it.cancel() }
         scope.coroutineContext[Job]?.cancel()
         runCatching { mqttClient.disconnect() }

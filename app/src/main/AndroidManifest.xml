@@ -34,6 +34,18 @@
     <!-- MQTT -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Tasker / automation integration: callers need this to query the ContentProvider -->
+    <uses-permission android:name="at.designer2k2.nearscan.permission.READ_DATA" />
+
+    <!--
+        Normal protection level = namespace guard, not a hard security gate.
+        Any app that declares <uses-permission> for this is granted it silently.
+        Change to "dangerous" if stricter access control is needed in the future.
+    -->
+    <permission
+        android:name="at.designer2k2.nearscan.permission.READ_DATA"
+        android:protectionLevel="normal" />
+
     <application
         android:name=".NearScanApplication"
         android:allowBackup="true"
@@ -58,6 +70,27 @@
             android:name=".service.ScanService"
             android:exported="false"
             android:foregroundServiceType="location" />
+
+        <!-- Tasker / automation: receives control commands (CMD_START, CMD_STOP, etc.) -->
+        <receiver
+            android:name=".ipc.CommandReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="at.designer2k2.nearscan.CMD_START" />
+                <action android:name="at.designer2k2.nearscan.CMD_STOP" />
+                <action android:name="at.designer2k2.nearscan.CMD_TOGGLE" />
+                <action android:name="at.designer2k2.nearscan.CMD_EXPORT" />
+                <action android:name="at.designer2k2.nearscan.CMD_SET_LOCATION" />
+                <action android:name="at.designer2k2.nearscan.CMD_SET_INTERVAL" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Tasker / automation: exposes live scan data via Content Query action -->
+        <provider
+            android:name=".ipc.NearScanContentProvider"
+            android:authorities="at.designer2k2.nearscan.provider"
+            android:exported="true"
+            android:readPermission="at.designer2k2.nearscan.permission.READ_DATA" />
 
     </application>
 

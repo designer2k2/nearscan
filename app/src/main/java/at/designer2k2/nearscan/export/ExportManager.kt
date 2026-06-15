@@ -7,6 +7,7 @@ import at.designer2k2.nearscan.db.CellScanDao
 import at.designer2k2.nearscan.db.WifiScanDao
 import at.designer2k2.nearscan.prefs.ExportFormat
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.first
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -30,6 +31,10 @@ class ExportManager @Inject constructor(
             ExportFormat.SQLITE -> exportSqlite(outputDir)
         }
     }
+
+    /** Sum of all records across the three scan tables. */
+    suspend fun totalRecordCount(): Long =
+        wifiScanDao.count().first() + btScanDao.count().first() + cellScanDao.count().first()
 
     /** Copies the Room database file directly to [outputDir] with a timestamped name. */
     private fun exportSqlite(outputDir: File): File {

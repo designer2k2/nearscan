@@ -259,6 +259,10 @@ nearscan/
 │       │   │   └── MqttPublisher.kt         # Live MQTT publish
 │       │   ├── mqtt/
 │       │   │   └── MqttClient.kt            # Eclipse Paho MQTT client wrapper
+│       │   ├── ipc/
+│       │   │   ├── TaskerBroadcaster.kt     # Sends outgoing event broadcasts
+│       │   │   ├── CommandReceiver.kt       # Receives Tasker control commands
+│       │   │   └── NearScanContentProvider.kt # ContentProvider for live data queries
 │       │   ├── prefs/
 │       │   │   └── SettingsManager.kt       # DataStore wrapper for all settings
 │       │   └── ui/
@@ -446,6 +450,157 @@ Key points to highlight:
 - Open export formats, no cloud dependency
 - MQTT integration for Home Assistant / Grafana pipelines
 - Open source on GitHub
+
+---
+
+## Tasker / Automation Integration
+
+NearScan exposes two standard Android IPC surfaces — **Broadcast Intents** and a **ContentProvider** — so automation apps (Tasker, MacroDroid, Automate, Locale) can both control NearScan and react to scan events without root or a proprietary plugin.
+
+### Design Principles
+
+- **No proprietary plugin protocol** — standard Android broadcasts and ContentProvider work out-of-the-box in every automation app
+- **Manifest-declared receiver** — `CommandReceiver` is declared in `AndroidManifest.xml` with `exported="true"` so Tasker can send commands even when NearScan's UI is closed or the service is stopped
+- **Self-contained outgoing events** — each outgoing broadcast carries all relevant data in extras; Tasker does not need a follow-up query
+- **Read-only ContentProvider** — guarded by a custom `normal`-level permission (acts as a namespace guard); change to `dangerous` if stricter isolation is needed
+
+---
+
+### 1. Outgoing Broadcasts — NearScan → Tasker
+
+Tasker profile trigger: **Event › App › Intent Received**, fill in the action string.
+
+| Action | Extras | Fires when |
+|--------|--------|------------|
+| `at.designer2k2.nearscan.SCAN_STARTED` | — | Scanning session begins |
+| `at.designer2k2.nearscan.SCAN_STOPPED` | `wifi_total` (int), `bt_total` (int), `cell_total` (int), `duration_s` (long) | Scanning session ends |
+| `at.designer2k2.nearscan.NEW_WIFI_FOUND` | `ssid`, `bssid`, `rssi` (int), `channel` (int), `lat` (double), `lon` (double) | First time a BSSID is seen this session |
+| `at.designer2k2.nearscan.NEW_BT_FOUND` | `address`, `name`, `rssi` (int) | First time a BT Classic address is seen this session |
+| `at.designer2k2.nearscan.NEW_BLE_FOUND` | `address`, `name`, `rssi` (int) | First time a BLE address is seen this session |
+| `at.designer2k2.nearscan.NEW_CELL_FOUND` | `mcc` (int), `mnc` (int), `cid` (long), `rssi` (int), `tech` (String) | First time a cell CID is seen this session |
+| `at.designer2k2.nearscan.ROUND_COMPLETE` | `wifi_count` (int), `bt_count` (int), `cell_count` (int), `timestamp` (long) | One full scan round finishes |
+| `at.designer2k2.nearscan.EXPORT_COMPLETE` | `file_path` (String), `format` (String), `record_count` (int) | An export file is written |
+
+`NEW_*` fires only on the **first** sighting per session; repeat detections do not fire individual events (use `ROUND_COMPLETE` counters instead).
+
+**Implementation:** `ipc/TaskerBroadcaster.kt` — singleton helper injected into `ScanService`; calls `context.sendBroadcast(Intent(action).apply { putExtra(…) })`.
+
+---
+
+### 2. Incoming Command Broadcasts — Tasker → NearScan
+
+Tasker task action: **Action › Send Intent**. Set **Package** = `at.designer2k2.nearscan` (so Android routes it explicitly to NearScan even with the implicit broadcast ban).
+
+| Action | Extras | Effect |
+|--------|--------|--------|
+| `at.designer2k2.nearscan.CMD_START` | — | Start scanning (no-op if already running) |
+| `at.designer2k2.nearscan.CMD_STOP` | — | Stop scanning |
+| `at.designer2k2.nearscan.CMD_TOGGLE` | — | Toggle scanning on/off |
+| `at.designer2k2.nearscan.CMD_EXPORT` | `format` (String, optional) | Trigger export; format overrides current setting if provided |
+| `at.designer2k2.nearscan.CMD_SET_LOCATION` | `lat` (double), `lon` (double), `alt` (double) | Update static coordinates (persisted to DataStore) |
+| `at.designer2k2.nearscan.CMD_SET_INTERVAL` | `type` (String: wifi/bt/ble/cell), `interval_sec` (int) | Change a scan interval at runtime |
+
+**Implementation:** `ipc/CommandReceiver.kt` — `BroadcastReceiver`, delegates to `ScanService.start()` / `stop()` or `SettingsManager` coroutine scope for settings mutations.
+
+**Manifest:**
+```xml
+<receiver
+    android:name=".ipc.CommandReceiver"
+    android:exported="true">
+    <intent-filter>
+        <action android:name="at.designer2k2.nearscan.CMD_START"/>
+        <action android:name="at.designer2k2.nearscan.CMD_STOP"/>
+        <action android:name="at.designer2k2.nearscan.CMD_TOGGLE"/>
+        <action android:name="at.designer2k2.nearscan.CMD_EXPORT"/>
+        <action android:name="at.designer2k2.nearscan.CMD_SET_LOCATION"/>
+        <action android:name="at.designer2k2.nearscan.CMD_SET_INTERVAL"/>
+    </intent-filter>
+</receiver>
+```
+
+---
+
+### 3. ContentProvider — Live Data Query Interface
+
+Read-only `ContentProvider` for Tasker's **Content Query** action or any app using `contentResolver.query()`.
+
+**Authority:** `at.designer2k2.nearscan.provider`
+
+| URI | Columns | Description |
+|-----|---------|-------------|
+| `.../wifi` | `bssid`, `ssid`, `rssi`, `channel`, `lat`, `lon`, `timestamp` | WiFi records, newest first |
+| `.../bt` | `address`, `name`, `rssi`, `lat`, `lon`, `timestamp` | BT Classic + BLE records, newest first |
+| `.../cell` | `mcc`, `mnc`, `cid`, `rssi`, `tech`, `lat`, `lon`, `timestamp` | Cell records, newest first |
+| `.../stats` | `is_running` (0/1), `wifi_total`, `bt_total`, `cell_total`, `duration_s`, `lat`, `lon` | Single-row live session summary |
+
+Standard `selection` / `selectionArgs` filtering is supported (e.g. `rssi > ?` with arg `["-70"]`).
+
+**Implementation:** `ipc/NearScanContentProvider.kt` — wraps Room DAO queries via `runBlocking` (the Binder thread pool thread that calls `query()` is not a coroutine context). Returns a `MatrixCursor` built from entity lists.
+
+**Manifest:**
+```xml
+<!-- Custom permission: any app can declare it (normal level = namespace guard, not a security gate) -->
+<permission
+    android:name="at.designer2k2.nearscan.permission.READ_DATA"
+    android:protectionLevel="normal"/>
+
+<provider
+    android:name=".ipc.NearScanContentProvider"
+    android:authorities="at.designer2k2.nearscan.provider"
+    android:exported="true"
+    android:readPermission="at.designer2k2.nearscan.permission.READ_DATA"/>
+```
+
+Querying app must add to its own manifest:
+```xml
+<uses-permission android:name="at.designer2k2.nearscan.permission.READ_DATA"/>
+```
+Tasker declares this automatically when you fill in the Content Query action; the user grants it silently (normal protection level).
+
+---
+
+### 4. New Files
+
+```
+ipc/
+├── TaskerBroadcaster.kt        # Sends outgoing event broadcasts from ScanService
+├── CommandReceiver.kt          # Receives Tasker control commands (manifest BroadcastReceiver)
+└── NearScanContentProvider.kt  # ContentProvider for live data queries
+```
+
+---
+
+### 5. Tasker Recipe Examples
+
+**A) Auto-stop at midnight:**
+- Profile: Time 00:00
+- Task: Send Intent → action `at.designer2k2.nearscan.CMD_STOP`, package `at.designer2k2.nearscan`
+
+**B) Alert when an unknown Bluetooth device appears:**
+- Profile: Intent Received → `at.designer2k2.nearscan.NEW_BT_FOUND`
+- Task: If `%address` not in known list → Flash "`%name` appeared!"
+
+**C) Show live WiFi count in a Tasker widget:**
+- Action: Content Query → `content://at.designer2k2.nearscan.provider/stats`
+- Variable: read column `wifi_total` → display in widget label
+
+**D) Set location from Tasker's built-in GPS:**
+- Tasker gets GPS → Send Intent `CMD_SET_LOCATION`, extras `lat=%LOCN lon=%LOCN2 alt=%LOCALT`
+
+**E) Scheduled session (office hours only):**
+- Profile 1: Time 08:00 → CMD_START
+- Profile 2: Time 18:00 → CMD_STOP + CMD_EXPORT (extras `format=wigle_csv`)
+
+---
+
+### 6. Android Version Notes
+
+| Concern | Details |
+|---------|---------|
+| Outgoing broadcasts reaching Tasker | Tasker registers its receiver at runtime → unaffected by Android 8+ manifest broadcast restrictions |
+| CommandReceiver (incoming) | Custom action strings are exempt from the implicit broadcast ban; `android:exported="true"` required on API 31+ (enforced by AGP lint) |
+| ContentProvider `exported` | Must be explicit `android:exported="true"` on API 31+; the `READ_DATA` permission prevents blind access from unrelated apps |
+| `runBlocking` in ContentProvider | Acceptable — ContentProvider `query()` is called on a Binder thread, not the main thread; blocking there does not ANR the UI |
 
 ---
 

@@ -23,7 +23,9 @@ It is **not affiliated with WiGLE** but exports a WiGLE-compatible CSV by defaul
 - **Repository:** github.com/designer2k2/nearscan
 - **Language:** Kotlin
 - **Min SDK:** 26 (Android 8.0)
-- **Target SDK:** Latest stable
+- **Target SDK / Compile SDK:** 35
+- **Kotlin:** 2.0.21 (uses `org.jetbrains.kotlin.plugin.compose` — NOT legacy `composeOptions`)
+- **AGP:** 8.3.2 · **KSP:** 2.0.21-1.0.28 · **Hilt:** 2.51.1 (KSP — kapt is incompatible with Kotlin 2.x)
 
 ---
 
@@ -48,8 +50,8 @@ It is **not affiliated with WiGLE** but exports a WiGLE-compatible CSV by defaul
   - BT Classic: 30 seconds
   - BT LE: 15 seconds
   - Cell: 60 seconds
-- Range: 5 seconds to 300 seconds per type
-- Implemented via `Handler.postDelayed()` loops inside a foreground Service
+- Range: 1 second to 300 seconds per type (UI slider: `1f..300f`)
+- Implemented via coroutine loops (`while (scope.isActive) { block(); delay(intervalMs) }`) inside a foreground Service
 
 ### Foreground Service
 - Runs as Android Foreground Service with persistent notification
@@ -75,7 +77,8 @@ It is **not affiliated with WiGLE** but exports a WiGLE-compatible CSV by defaul
   - optional extra fields (see Extra Fields below)
 
 ### Extra Logged Fields (optional, toggleable per field)
-When enabled, these are added as additional columns to the database and custom CSV export.
+When enabled, these are **collected at scan time and included in MQTT payloads and Custom CSV export**.
+They are **NOT stored as columns in the Room database** (DB entities only hold RF + location fields).
 They do NOT appear in WiGLE CSV export (fixed schema).
 
 **Device State:**
@@ -149,35 +152,19 @@ They do NOT appear in WiGLE CSV export (fixed schema).
 [ ✓ ] Cell Towers    [───────●───] 60s
 ```
 
-**WiFi Options**
-- Band filter: [ ✓ ] 2.4 GHz  [ ✓ ] 5 GHz  [ ✓ ] 6 GHz
-- Min RSSI threshold: -90 dBm (slider)
-
-**BT Options**
-- Device class filter (All / Audio / Phone / Computer / Network)
-
 **Output**
-- Export format: `[WiGLE CSV ▼]` (WiGLE CSV / Custom CSV / GeoJSON / SQLite dump)
-- Output folder: `/sdcard/NearScan/` [Change]
-- Auto-export every: `[Never ▼]` (Never / 15min / 30min / 1hr / On Stop)
-- MQTT: [ ] Enable → broker / topic fields appear
+- Export format: `[WiGLE CSV ▼]` (WiGLE CSV / Custom CSV / GeoJSON / SQLite dump) ✅ implemented
+- MQTT: [ ] Enable → broker / topic fields appear ✅ implemented
+- Keep screen on while running: [ ] toggle ✅ implemented
+- Deduplicate: [ ] toggle ✅ implemented
 
-**Extra Logged Fields** (checkboxes, all off by default)
-- [ ] Battery level
-- [ ] Battery charging state
-- [ ] Battery temperature
-- [ ] Screen state
-- [ ] Mobile data active
-- [ ] Active network type
-- [ ] Connected WiFi SSID
-- [ ] Compass heading
-- [ ] Device tilt
-- [ ] Scan duration
-- [ ] Memory available
-
-*Note shown: "Extra fields are not included in WiGLE CSV export"*
-
-**Keep screen on while running:** [ ] toggle
+**Not yet in UI (settings exist in DataStore, UI controls not yet built):**
+- WiFi band filter (2.4 / 5 / 6 GHz) — `wifiBands` key persisted
+- WiFi min RSSI threshold — `wifiMinRssi` key persisted
+- BT device class filter
+- Output folder picker — `outputFolder` key persisted
+- Auto-export interval — `autoExportIntervalMin` key persisted
+- Extra Logged Fields checkboxes (battery, screen, network, sensors, memory) — all 11 keys persisted, `ExtraFieldsCollector` fully implemented; just no UI controls yet
 
 ---
 
@@ -232,63 +219,92 @@ Payload example:
 ```
 nearscan/
 ├── app/
+│   ├── robo-script.json                     # Firebase Robo Test script
 │   └── src/main/
 │       ├── java/at/designer2k2/nearscan/
-│       │   ├── MainActivity.kt              # Entry point, sets Compose content
+│       │   ├── NearScanApplication.kt       # @HiltAndroidApp entry point
+│       │   ├── MainActivity.kt              # Sets Compose content, requests permissions
+│       │   ├── di/
+│       │   │   └── AppModule.kt             # Hilt @Singleton providers (DB, DAOs, system services)
 │       │   ├── service/
 │       │   │   └── ScanService.kt           # Foreground service, orchestrates all scanners
 │       │   ├── scanner/
-│       │   │   ├── WifiScanner.kt           # WifiManager scanning
-│       │   │   ├── BluetoothScanner.kt      # Classic BT discovery
-│       │   │   ├── BleScanner.kt            # BLE scan via BluetoothLeScanner
-│       │   │   └── CellScanner.kt           # TelephonyManager.getAllCellInfo()
+│       │   │   ├── WifiScanner.kt           # WifiManager + SCAN_RESULTS_AVAILABLE_ACTION
+│       │   │   ├── BluetoothScanner.kt      # Classic BT startDiscovery() + ACTION_FOUND
+│       │   │   ├── BleScanner.kt            # BluetoothLeScanner, SCAN_MODE_LOW_LATENCY, 5s window
+│       │   │   └── CellScanner.kt           # TelephonyManager.getAllCellInfo() (GSM/LTE/WCDMA/NR)
 │       │   ├── extra/
-│       │   │   └── ExtraFieldsCollector.kt  # Battery, sensors, network state
+│       │   │   └── ExtraFieldsCollector.kt  # Battery, screen, network, compass/tilt, memory
 │       │   ├── location/
-│       │   │   └── LocationHelper.kt        # Single GPS fix + manual entry
+│       │   │   └── LocationHelper.kt        # Single GPS fix (requestSingleUpdate) + manual entry
 │       │   ├── db/
-│       │   │   ├── AppDatabase.kt           # Room database
-│       │   │   ├── WifiScanEntity.kt
-│       │   │   ├── BtScanEntity.kt
-│       │   │   └── CellScanEntity.kt
+│       │   │   ├── AppDatabase.kt           # Room database (name: nearscan.db, version 1)
+│       │   │   ├── ScanDao.kt               # WifiScanDao, BtScanDao, CellScanDao interfaces
+│       │   │   ├── WifiScanEntity.kt        # wifi_scans table
+│       │   │   ├── BtScanEntity.kt          # bt_scans table (isBle flag distinguishes Classic/BLE)
+│       │   │   └── CellScanEntity.kt        # cell_scans table
 │       │   ├── export/
-│       │   │   ├── ExportManager.kt         # Orchestrates export
-│       │   │   ├── WigleCsvExporter.kt      # WiGLE-compatible CSV
-│       │   │   ├── CustomCsvExporter.kt     # Full schema CSV
-│       │   │   ├── GeoJsonExporter.kt       # GeoJSON FeatureCollection
-│       │   │   └── MqttPublisher.kt         # Live MQTT publish
+│       │   │   ├── ExportManager.kt         # Orchestrates export + totalRecordCount()
+│       │   │   ├── WigleCsvExporter.kt      # WiGLE-compatible CSV (fixed schema)
+│       │   │   ├── CustomCsvExporter.kt     # Full schema CSV (all RF fields)
+│       │   │   └── GeoJsonExporter.kt       # GeoJSON FeatureCollection
 │       │   ├── mqtt/
-│       │   │   └── MqttClient.kt            # Eclipse Paho MQTT client wrapper
+│       │   │   ├── MqttClient.kt            # Eclipse Paho v3 client wrapper (singleton)
+│       │   │   └── MqttPublisher.kt         # entity → JSON + extra fields → publish
 │       │   ├── ipc/
-│       │   │   ├── TaskerBroadcaster.kt     # Sends outgoing event broadcasts
-│       │   │   ├── CommandReceiver.kt       # Receives Tasker control commands
-│       │   │   └── NearScanContentProvider.kt # ContentProvider for live data queries
+│       │   │   ├── TaskerBroadcaster.kt     # Sends 8 outgoing event broadcasts; manages seen-sets
+│       │   │   ├── CommandReceiver.kt       # Manifest BroadcastReceiver for 6 CMD_* actions
+│       │   │   └── NearScanContentProvider.kt # Read-only ContentProvider (/wifi /bt /cell /stats)
 │       │   ├── prefs/
-│       │   │   └── SettingsManager.kt       # DataStore wrapper for all settings
+│       │   │   ├── NearScanSettings.kt      # Immutable settings data class + ExportFormat enum
+│       │   │   └── SettingsDataStore.kt     # DataStore<Preferences> wrapper; settings Flow + update helpers
 │       │   └── ui/
-│       │       ├── MainViewModel.kt         # StateFlow<MainUiState> for counters, session state
-│       │       ├── MainScreen.kt            # Root composable, START/STOP, counters, session info
-│       │       ├── LocationDialog.kt        # Set location dialog composable
-│       │       ├── AdvancedSettingsCard.kt  # Collapsible advanced settings composable
+│       │       ├── MainViewModel.kt         # AndroidViewModel; StateFlow<MainUiState>; GPS fix logic
+│       │       ├── MainScreen.kt            # Root composable: START/STOP, counters, session stats
+│       │       ├── LocationDialog.kt        # Manual lat/lon/alt entry + GPS fix button
+│       │       ├── AdvancedSettingsCard.kt  # Collapsible card: scan toggles, export format, MQTT
 │       │       └── theme/
 │       │           ├── Color.kt
 │       │           ├── Theme.kt
 │       │           └── Type.kt
-│       └── res/
-│           └── values/
-│               ├── strings.xml
-│               └── themes.xml               # Shell theme (window background only; Compose owns the rest)
+│       ├── res/
+│       │   └── values/                      # strings.xml + values-XX/ for 10 languages
+│       └── AndroidManifest.xml
+├── gradle/
+│   └── libs.versions.toml                   # Version catalog
 ├── CLAUDE.md                                # This file
 └── README.md
 ```
 
 ---
 
-## Dependencies (build.gradle)
+## Build Commands
+
+```bash
+# Debug APK (WSL2: build to /tmp to avoid AAPT2 filesystem flakiness)
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ANDROID_HOME=/opt/android-sdk \
+  ./gradlew assembleDebug -PbuildDir=/tmp/nearscan-build --no-daemon
+
+# Output: /tmp/nearscan-build/outputs/apk/debug/app-debug.apk
+
+# Unit tests
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ANDROID_HOME=/opt/android-sdk \
+  ./gradlew testDebugUnitTest -PbuildDir=/tmp/nearscan-build --no-daemon
+
+# Firebase Robo Test
+gcloud firebase test android run \
+  --app /tmp/nearscan-build/outputs/apk/debug/app-debug.apk \
+  --robo-script app/robo-script.json \
+  --device model=Pixel6,version=33
+```
+
+---
+
+## Dependencies (libs.versions.toml / build.gradle.kts)
 
 ```kotlin
 // Compose BOM — pins all Compose library versions together
-implementation(platform("androidx.compose:compose-bom:2026.02.01"))
+implementation(platform("androidx.compose:compose-bom:2024.05.00"))
 implementation("androidx.compose.ui:ui")
 implementation("androidx.compose.ui:ui-tooling-preview")
 implementation("androidx.compose.material3:material3")
@@ -296,10 +312,15 @@ implementation("androidx.activity:activity-compose:1.9.0")
 debugImplementation("androidx.compose.ui:ui-tooling")
 
 // ViewModel + StateFlow (no LiveData needed)
-implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
-implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
+implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
 
-// Room (KSP — not kapt; kapt is incompatible with Kotlin 2.x)
+// Hilt DI (KSP — NOT kapt; kapt is incompatible with Kotlin 2.x)
+implementation("com.google.dagger:hilt-android:2.51.1")
+ksp("com.google.dagger:hilt-android-compiler:2.51.1")
+implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+// Room (KSP)
 implementation("androidx.room:room-runtime:2.6.1")
 implementation("androidx.room:room-ktx:2.6.1")
 ksp("androidx.room:room-compiler:2.6.1")
@@ -308,9 +329,9 @@ ksp("androidx.room:room-compiler:2.6.1")
 implementation("androidx.datastore:datastore-preferences:1.1.1")
 
 // Coroutines
-implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
 
-// MQTT (Eclipse Paho v3 client only — the Paho Android Service is deprecated/broken on Android 12+)
+// MQTT (Eclipse Paho v3 client only — Paho Android Service is deprecated/broken on Android 12+)
 implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
 ```
 
@@ -342,6 +363,14 @@ implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
 
 <!-- Keep CPU alive -->
 <uses-permission android:name="android.permission.WAKE_LOCK"/>
+
+<!-- MQTT -->
+<uses-permission android:name="android.permission.INTERNET"/>
+
+<!-- Tasker ContentProvider callers -->
+<uses-permission android:name="at.designer2k2.nearscan.permission.READ_DATA"/>
+<permission android:name="at.designer2k2.nearscan.permission.READ_DATA"
+    android:protectionLevel="normal"/>
 ```
 
 Runtime permissions to request on first launch:
@@ -390,7 +419,11 @@ On Android 9+ WiFi scan throttling applies. In Developer Options there is a togg
 
 ---
 
-## Settings Persistence (SharedPreferences keys)
+## Settings Persistence (DataStore keys)
+
+All settings are persisted via `androidx.datastore:datastore-preferences` in `SettingsDataStore.kt`.
+The class exposes a `settings: Flow<NearScanSettings>` and `update()` / `updateLocation()` helpers.
+**Not SharedPreferences** — see `prefs/SettingsDataStore.kt` for the full key map.
 
 ```
 nearscan_lat              (float)
@@ -479,7 +512,7 @@ Tasker profile trigger: **Event › App › Intent Received**, fill in the actio
 | `at.designer2k2.nearscan.NEW_BLE_FOUND` | `address`, `name`, `rssi` (int) | First time a BLE address is seen this session |
 | `at.designer2k2.nearscan.NEW_CELL_FOUND` | `mcc` (int), `mnc` (int), `cid` (long), `rssi` (int), `tech` (String) | First time a cell CID is seen this session |
 | `at.designer2k2.nearscan.ROUND_COMPLETE` | `wifi_count` (int), `bt_count` (int), `cell_count` (int), `timestamp` (long) | One full scan round finishes |
-| `at.designer2k2.nearscan.EXPORT_COMPLETE` | `file_path` (String), `format` (String), `record_count` (int) | An export file is written |
+| `at.designer2k2.nearscan.EXPORT_COMPLETE` | `file_path` (String), `format` (String), `record_count` (Long) | An export file is written |
 
 `NEW_*` fires only on the **first** sighting per session; repeat detections do not fire individual events (use `ROUND_COMPLETE` counters instead).
 
@@ -533,9 +566,9 @@ Read-only `ContentProvider` for Tasker's **Content Query** action or any app usi
 | `.../cell` | `mcc`, `mnc`, `cid`, `rssi`, `tech`, `lat`, `lon`, `timestamp` | Cell records, newest first |
 | `.../stats` | `is_running` (0/1), `wifi_total`, `bt_total`, `cell_total`, `duration_s`, `lat`, `lon` | Single-row live session summary |
 
-Standard `selection` / `selectionArgs` filtering is supported (e.g. `rssi > ?` with arg `["-70"]`).
+**Note:** `selection` / `selectionArgs` are accepted but **not filtered** — the full table is always returned (v1). Filter results in Tasker variables if needed.
 
-**Implementation:** `ipc/NearScanContentProvider.kt` — wraps Room DAO queries via `runBlocking` (the Binder thread pool thread that calls `query()` is not a coroutine context). Returns a `MatrixCursor` built from entity lists.
+**Implementation:** `ipc/NearScanContentProvider.kt` — uses Hilt `@EntryPoint` pattern (ContentProvider cannot use `@AndroidEntryPoint`); wraps Room DAO queries via `runBlocking` (Binder thread — safe, does not ANR). Returns a `MatrixCursor` built from entity lists.
 
 **Manifest:**
 ```xml
@@ -601,6 +634,18 @@ ipc/
 | CommandReceiver (incoming) | Custom action strings are exempt from the implicit broadcast ban; `android:exported="true"` required on API 31+ (enforced by AGP lint) |
 | ContentProvider `exported` | Must be explicit `android:exported="true"` on API 31+; the `READ_DATA` permission prevents blind access from unrelated apps |
 | `runBlocking` in ContentProvider | Acceptable — ContentProvider `query()` is called on a Binder thread, not the main thread; blocking there does not ANR the UI |
+
+---
+
+## Firebase Testing
+
+Robo script: `app/robo-script.json`
+
+Covers (in order): set location manually → save, start scan (8 s), stop scan, expand Advanced Settings, toggle BT Classic + BLE switches, cycle export format dropdown (WiGLE CSV → GeoJSON → Custom CSV → WiGLE CSV), enable MQTT + fill broker/topic fields + disable MQTT, toggle Keep screen on + Deduplicate, collapse Advanced Settings, second start/stop cycle, location dialog cancel flow.
+
+Element targeting uses `text` and `contentDescription` — no `testTag` annotations required. BT Classic and BLE labels are unambiguous (counter labels are "BT" and "Cell", scan type labels are "BT Classic" and "BLE").
+
+Firebase Test Lab auto-grants all manifest permissions — the foreground service will actually start on test devices.
 
 ---
 

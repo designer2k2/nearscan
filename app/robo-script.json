@@ -1,0 +1,300 @@
+[
+  {
+    "eventType": "WAIT",
+    "delayTime": 4000
+  },
+
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "Set Location" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 500
+  },
+  {
+    "eventType": "VIEW_TEXT_CHANGED",
+    "replacementText": "47.2692",
+    "elementDescriptors": [
+      { "contentDescription": "Latitude" }
+    ]
+  },
+  {
+    "eventType": "VIEW_TEXT_CHANGED",
+    "replacementText": "11.4041",
+    "elementDescriptors": [
+      { "contentDescription": "Longitude" }
+    ]
+  },
+  {
+    "eventType": "VIEW_TEXT_CHANGED",
+    "replacementText": "574",
+    "elementDescriptors": [
+      { "contentDescription": "Altitude" }
+    ]
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "Save" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 1000
+  },
+
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "START" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 8000
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "STOP" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 1000
+  },
+
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "Advanced Settings" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 600
+  },
+
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "BT Classic" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 300
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "BT Classic" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 300
+  },
+
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "BLE" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 300
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "BLE" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 300
+  },
+
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "WiGLE CSV" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 500
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "GeoJSON" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 500
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "GeoJSON" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 500
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "Custom CSV" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 500
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "Custom CSV" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 500
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "WiGLE CSV" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 500
+  },
+
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "MQTT" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 600
+  },
+  {
+    "eventType": "VIEW_TEXT_CHANGED",
+    "replacementText": "tcp://test.mosquitto.org:1883",
+    "elementDescriptors": [
+      { "contentDescription": "Broker" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 300
+  },
+  {
+    "eventType": "VIEW_TEXT_CHANGED",
+    "replacementText": "nearscan/test",
+    "elementDescriptors": [
+      { "contentDescription": "Topic" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 300
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "MQTT" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 600
+  },
+
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "Keep screen on" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 300
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "Deduplicate" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 300
+  },
+
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "Advanced Settings" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 600
+  },
+
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "START" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 6000
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "STOP" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 1000
+  },
+
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "Set Location" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 500
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "Cancel" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 500
+  }
+]

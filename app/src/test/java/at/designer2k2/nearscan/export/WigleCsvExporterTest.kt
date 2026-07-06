@@ -59,7 +59,7 @@ class WigleCsvExporterTest {
         band = "2.4",
     )
 
-    private fun makeBtEntity(): BtScanEntity = BtScanEntity(
+    private fun makeBtEntity(isBle: Boolean = false): BtScanEntity = BtScanEntity(
         timestamp = 1_718_352_000_000L,
         latitude = 47.0,
         longitude = 11.0,
@@ -68,7 +68,7 @@ class WigleCsvExporterTest {
         name = "Speaker",
         rssi = -70,
         deviceClass = 1024,
-        isBle = true,
+        isBle = isBle,
     )
 
     private fun makeCellEntity(): CellScanEntity = CellScanEntity(
@@ -94,16 +94,25 @@ class WigleCsvExporterTest {
     @Test
     fun `export writes WiGLE pre-header on first line`() {
         val file = export(listOf(makeWifiEntity()))
-        assertTrue(lines(file).first().startsWith("WigleWifi-1.4,"))
+        assertTrue(lines(file).first().startsWith("WigleWifi-1.6,"))
     }
 
     @Test
     fun `export writes column header on second line`() {
         val file = export(listOf(makeWifiEntity()))
         assertEquals(
-            "MAC,SSID,AuthMode,FirstSeen,Channel,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,Type",
+            "MAC,SSID,AuthMode,FirstSeen,Channel,Frequency,RSSI,CurrentLatitude,CurrentLongitude," +
+                "AltitudeMeters,AccuracyMeters,RCOIs,MfgrId,Type",
             lines(file)[1],
         )
+    }
+
+    @Test
+    fun `export row FirstSeen is a formatted UTC date, not raw epoch millis`() {
+        val file = export(listOf(makeWifiEntity()))
+        val cols = lines(file)[2].split(",")
+        // timestamp = 1_718_352_000_000L == 2024-06-14 08:00:00 UTC
+        assertEquals("2024-06-14 08:00:00", cols[3])
     }
 
     @Test
@@ -141,9 +150,17 @@ class WigleCsvExporterTest {
 
     @Test
     fun `BT row is included with type BT`() {
-        coEvery { btScanDao.getPage(any(), any()) } returns listOf(makeBtEntity())
+        coEvery { btScanDao.getPage(any(), any()) } returns listOf(makeBtEntity(isBle = false))
         val file = runBlocking { exporter.export(outputDir) }
         val row = lines(file).drop(2).first { it.split(",").last() == "BT" }
+        assertTrue(row.startsWith("AA:BB:CC:11:22:33,Speaker,"))
+    }
+
+    @Test
+    fun `BLE row is included with type BLE, not BT`() {
+        coEvery { btScanDao.getPage(any(), any()) } returns listOf(makeBtEntity(isBle = true))
+        val file = runBlocking { exporter.export(outputDir) }
+        val row = lines(file).drop(2).first { it.split(",").last() == "BLE" }
         assertTrue(row.startsWith("AA:BB:CC:11:22:33,Speaker,"))
     }
 

@@ -4,6 +4,10 @@ import at.designer2k2.nearscan.db.BtScanDao
 import at.designer2k2.nearscan.db.CellScanDao
 import at.designer2k2.nearscan.db.WifiScanDao
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -12,6 +16,9 @@ import javax.inject.Singleton
  * observation across all three scan tables (WiFi/BT/Cell), using WiGLE's Type column to
  * distinguish them. Tables are read page-by-page so memory use stays bounded regardless of
  * how many rows a multi-day session has accumulated.
+ *
+ * Follows the WigleWifi-1.6 spec (https://api.wigle.net/csvFormat-1_6.html): FirstSeen must be
+ * "yyyy-MM-dd HH:mm:ss" in UTC, not a raw epoch value, or WiGLE's upload parser rejects the row.
  */
 @Singleton
 class WigleCsvExporter @Inject constructor(
@@ -22,6 +29,9 @@ class WigleCsvExporter @Inject constructor(
     suspend fun export(outputDir: File): File {
         if (!outputDir.exists()) outputDir.mkdirs()
         val file = File(outputDir, "nearscan_wigle_${System.currentTimeMillis()}.csv")
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
 
         file.bufferedWriter().use { w ->
             w.appendLine(PRE_HEADER)
@@ -33,13 +43,16 @@ class WigleCsvExporter @Inject constructor(
                         r.bssid,
                         r.ssid ?: "",
                         r.capabilities ?: "",
-                        r.timestamp.toString(),
+                        dateFormat.format(Date(r.timestamp)),
                         r.channel.toString(),
+                        r.frequency.toString(),
                         r.rssi.toString(),
                         r.latitude?.toString() ?: "",
                         r.longitude?.toString() ?: "",
                         r.altitude?.toString() ?: "",
                         "", // accuracy
+                        "", // RCOIs
+                        "", // MfgrId
                         "WIFI",
                     ).joinToString(","),
                 )
@@ -51,14 +64,17 @@ class WigleCsvExporter @Inject constructor(
                         r.address,
                         r.name ?: "",
                         "",
-                        r.timestamp.toString(),
+                        dateFormat.format(Date(r.timestamp)),
                         "",
+                        "", // frequency
                         r.rssi.toString(),
                         r.latitude?.toString() ?: "",
                         r.longitude?.toString() ?: "",
                         r.altitude?.toString() ?: "",
                         "", // accuracy
-                        "BT",
+                        "", // RCOIs
+                        "", // MfgrId
+                        if (r.isBle) "BLE" else "BT",
                     ).joinToString(","),
                 )
             }
@@ -69,13 +85,16 @@ class WigleCsvExporter @Inject constructor(
                         "",
                         "${r.mcc ?: ""}-${r.mnc ?: ""}-${r.cid ?: ""}",
                         "",
-                        r.timestamp.toString(),
+                        dateFormat.format(Date(r.timestamp)),
                         r.lac?.toString() ?: "",
+                        "", // frequency
                         r.rssi.toString(),
                         r.latitude?.toString() ?: "",
                         r.longitude?.toString() ?: "",
                         r.altitude?.toString() ?: "",
                         "", // accuracy
+                        "", // RCOIs
+                        "", // MfgrId
                         r.technology ?: "",
                     ).joinToString(","),
                 )
@@ -99,8 +118,8 @@ class WigleCsvExporter @Inject constructor(
         }
 
         const val PRE_HEADER =
-            "WigleWifi-1.4,appRelease=0.1.0,model=NearScan,release=0.1.0,device=NearScan,display=NearScan,board=NearScan,brand=NearScan"
+            "WigleWifi-1.6,appRelease=0.1.0,model=NearScan,release=0.1.0,device=NearScan,display=NearScan,board=NearScan,brand=NearScan"
         const val COLUMN_HEADER =
-            "MAC,SSID,AuthMode,FirstSeen,Channel,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,Type"
+            "MAC,SSID,AuthMode,FirstSeen,Channel,Frequency,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,RCOIs,MfgrId,Type"
     }
 }

@@ -2,6 +2,9 @@
 build/
 *.apk
 *.aab
+nearscan_*.csv
+nearscan_*.geojson
+nearscan_*.sqlite
 local.properties
 .idea/
 *.iml

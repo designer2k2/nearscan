@@ -51,6 +51,7 @@ class SettingsDataStore @Inject constructor(
 
         val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
         val DEDUP = booleanPreferencesKey("dedup_enabled")
+        val BATTERY_OPT_PROMPT_SHOWN = booleanPreferencesKey("battery_opt_prompt_shown")
 
         val EX_BATT_LEVEL = booleanPreferencesKey("extra_battery_level")
         val EX_BATT_CHARGING = booleanPreferencesKey("extra_battery_charging")
@@ -89,6 +90,7 @@ class SettingsDataStore @Inject constructor(
             mqttTopic = p[Keys.MQTT_TOPIC] ?: defaults.mqttTopic,
             keepScreenOn = p[Keys.KEEP_SCREEN_ON] ?: defaults.keepScreenOn,
             dedupEnabled = p[Keys.DEDUP] ?: defaults.dedupEnabled,
+            batteryOptPromptShown = p[Keys.BATTERY_OPT_PROMPT_SHOWN] ?: defaults.batteryOptPromptShown,
             extraBatteryLevel = p[Keys.EX_BATT_LEVEL] ?: defaults.extraBatteryLevel,
             extraBatteryCharging = p[Keys.EX_BATT_CHARGING] ?: defaults.extraBatteryCharging,
             extraBatteryTemp = p[Keys.EX_BATT_TEMP] ?: defaults.extraBatteryTemp,
@@ -109,6 +111,11 @@ class SettingsDataStore @Inject constructor(
             it[Keys.LON] = lon
             it[Keys.ALT] = alt
         }
+    }
+
+    /** Marks the one-time battery optimization exemption prompt as shown. */
+    suspend fun markBatteryOptPromptShown() {
+        context.dataStore.edit { it[Keys.BATTERY_OPT_PROMPT_SHOWN] = true }
     }
 
     /** Persists every field of [settings]. */
@@ -135,6 +142,7 @@ class SettingsDataStore @Inject constructor(
             p[Keys.MQTT_TOPIC] = settings.mqttTopic
             p[Keys.KEEP_SCREEN_ON] = settings.keepScreenOn
             p[Keys.DEDUP] = settings.dedupEnabled
+            p[Keys.BATTERY_OPT_PROMPT_SHOWN] = settings.batteryOptPromptShown
             p[Keys.EX_BATT_LEVEL] = settings.extraBatteryLevel
             p[Keys.EX_BATT_CHARGING] = settings.extraBatteryCharging
             p[Keys.EX_BATT_TEMP] = settings.extraBatteryTemp

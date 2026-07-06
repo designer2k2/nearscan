@@ -26,9 +26,9 @@ class GeoJsonExporterTest {
     @Before
     fun setUp() {
         outputDir = createTempDir(prefix = "geojson-test")
-        coEvery { wifiScanDao.getAll() } returns emptyList()
-        coEvery { btScanDao.getAll() } returns emptyList()
-        coEvery { cellScanDao.getAll() } returns emptyList()
+        coEvery { wifiScanDao.getPage(any(), any()) } returns emptyList()
+        coEvery { btScanDao.getPage(any(), any()) } returns emptyList()
+        coEvery { cellScanDao.getPage(any(), any()) } returns emptyList()
     }
 
     @After
@@ -94,7 +94,7 @@ class GeoJsonExporterTest {
 
     @Test
     fun `each wifi record becomes a Feature`() {
-        coEvery { wifiScanDao.getAll() } returns listOf(makeWifiEntity(), makeWifiEntity())
+        coEvery { wifiScanDao.getPage(any(), any()) } returns listOf(makeWifiEntity(), makeWifiEntity())
         val json = exportJson()
         val featureCount = "\"type\":\"Feature\"".toRegex().findAll(json).count()
         assertTrue(featureCount == 2)
@@ -102,26 +102,26 @@ class GeoJsonExporterTest {
 
     @Test
     fun `feature has Point geometry type`() {
-        coEvery { wifiScanDao.getAll() } returns listOf(makeWifiEntity())
+        coEvery { wifiScanDao.getPage(any(), any()) } returns listOf(makeWifiEntity())
         assertTrue(exportJson().contains("\"geometry\":{\"type\":\"Point\""))
     }
 
     @Test
     fun `coordinates order is longitude latitude altitude`() {
-        coEvery { wifiScanDao.getAll() } returns listOf(makeWifiEntity(lat = 47.2692, lon = 11.4041, alt = 574.0))
+        coEvery { wifiScanDao.getPage(any(), any()) } returns listOf(makeWifiEntity(lat = 47.2692, lon = 11.4041, alt = 574.0))
         // lon first, then lat, then alt
         assertTrue(exportJson().contains("\"coordinates\":[11.4041,47.2692,574.0]"))
     }
 
     @Test
     fun `feature properties contain scan_type WIFI`() {
-        coEvery { wifiScanDao.getAll() } returns listOf(makeWifiEntity())
+        coEvery { wifiScanDao.getPage(any(), any()) } returns listOf(makeWifiEntity())
         assertTrue(exportJson().contains("\"scan_type\":\"WIFI\""))
     }
 
     @Test
     fun `null coordinates produce has_location false property`() {
-        coEvery { wifiScanDao.getAll() } returns listOf(makeWifiEntity(lat = null, lon = null, alt = null))
+        coEvery { wifiScanDao.getPage(any(), any()) } returns listOf(makeWifiEntity(lat = null, lon = null, alt = null))
         val json = exportJson()
         assertTrue(json.contains("\"has_location\":false"))
         assertTrue(json.contains("\"coordinates\":null"))
@@ -129,13 +129,13 @@ class GeoJsonExporterTest {
 
     @Test
     fun `bt record has scan_type BT`() {
-        coEvery { btScanDao.getAll() } returns listOf(makeBtEntity())
+        coEvery { btScanDao.getPage(any(), any()) } returns listOf(makeBtEntity())
         assertTrue(exportJson().contains("\"scan_type\":\"BT\""))
     }
 
     @Test
     fun `cell record has scan_type CELL`() {
-        coEvery { cellScanDao.getAll() } returns listOf(makeCellEntity())
+        coEvery { cellScanDao.getPage(any(), any()) } returns listOf(makeCellEntity())
         assertTrue(exportJson().contains("\"scan_type\":\"CELL\""))
     }
 

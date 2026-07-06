@@ -52,6 +52,7 @@ data class NearScanSettings(
     // Misc
     val keepScreenOn: Boolean = false,
     val dedupEnabled: Boolean = false,
+    val batteryOptPromptShown: Boolean = false,
 
     // Extra logged fields
     val extraBatteryLevel: Boolean = false,

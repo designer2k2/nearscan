@@ -20,16 +20,21 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import at.designer2k2.nearscan.R
+import kotlinx.coroutines.launch
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -45,13 +51,37 @@ fun MainScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showLocationDialog by remember { mutableStateOf(false) }
+    var advancedExpanded by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    LaunchedEffect(state.exportResult) {
+        state.exportResult?.let { result ->
+            val text = if (result.success) {
+                context.getString(R.string.export_success, result.message)
+            } else {
+                context.getString(R.string.export_failed, result.message)
+            }
+            snackbarHostState.showSnackbar(text)
+            viewModel.consumeExportResult()
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
-                    IconButton(onClick = { /* TODO: open settings */ }) {
+                    IconButton(
+                        onClick = {
+                            advancedExpanded = !advancedExpanded
+                            if (advancedExpanded) {
+                                coroutineScope.launch { scrollState.animateScrollTo(scrollState.maxValue) }
+                            }
+                        },
+                    ) {
                         Icon(
                             imageVector = Icons.Filled.Settings,
                             contentDescription = stringResource(R.string.settings),
@@ -65,12 +95,13 @@ fun MainScreen(
                 ),
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -115,6 +146,10 @@ fun MainScreen(
             AdvancedSettingsCard(
                 settings = state.settings,
                 onSettingsChange = viewModel::updateSettings,
+                expanded = advancedExpanded,
+                onExpandedChange = { advancedExpanded = it },
+                isExporting = state.isExporting,
+                onExportNow = viewModel::exportNow,
             )
         }
     }

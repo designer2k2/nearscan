@@ -32,4 +32,9 @@
     <string name="notification_running">RF環境をスキャン中</string>
     <string name="no_location_set">位置未設定</string>
     <string name="notification_counts">WiFi: %1$d  BT: %2$d  セル: %3$d</string>
+    <string name="gps_accuracy">精度: %1$.0f m</string>
+    <string name="location_invalid">有効な緯度と経度を入力してください</string>
+    <string name="export_now">今すぐエクスポート</string>
+    <string name="export_success">%1$s にエクスポートしました</string>
+    <string name="export_failed">エクスポート失敗: %1$s</string>
 </resources>

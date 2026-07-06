@@ -32,4 +32,9 @@
     <string name="notification_running">RF 환경 스캔 중</string>
     <string name="no_location_set">위치 미설정</string>
     <string name="notification_counts">WiFi: %1$d  BT: %2$d  셀: %3$d</string>
+    <string name="gps_accuracy">정확도: %1$.0f m</string>
+    <string name="location_invalid">유효한 위도와 경도를 입력하세요</string>
+    <string name="export_now">지금 내보내기</string>
+    <string name="export_success">%1$s(으)로 내보냈습니다</string>
+    <string name="export_failed">내보내기 실패: %1$s</string>
 </resources>

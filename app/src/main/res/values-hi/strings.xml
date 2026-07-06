@@ -32,4 +32,9 @@
     <string name="notification_running">RF वातावरण स्कैन हो रहा है</string>
     <string name="no_location_set">कोई स्थान सेट नहीं</string>
     <string name="notification_counts">WiFi: %1$d  BT: %2$d  सेल: %3$d</string>
+    <string name="gps_accuracy">सटीकता: %1$.0f मी</string>
+    <string name="location_invalid">एक मान्य अक्षांश और देशांतर दर्ज करें</string>
+    <string name="export_now">अभी निर्यात करें</string>
+    <string name="export_success">%1$s में निर्यात किया गया</string>
+    <string name="export_failed">निर्यात विफल: %1$s</string>
 </resources>

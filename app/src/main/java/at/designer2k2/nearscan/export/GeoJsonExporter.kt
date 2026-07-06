@@ -10,7 +10,8 @@ import javax.inject.Singleton
 /**
  * Exports all scan records as a GeoJSON FeatureCollection. Each record becomes a Point Feature
  * with its scan fields exposed as properties. JSON is assembled manually as the project has no
- * JSON serialization dependency.
+ * JSON serialization dependency. Tables are read page-by-page so memory use stays bounded
+ * regardless of session length.
  */
 @Singleton
 class GeoJsonExporter @Inject constructor(
@@ -22,15 +23,11 @@ class GeoJsonExporter @Inject constructor(
         if (!outputDir.exists()) outputDir.mkdirs()
         val file = File(outputDir, "nearscan_geo_${System.currentTimeMillis()}.geojson")
 
-        val wifi = wifiScanDao.getAll()
-        val bt = btScanDao.getAll()
-        val cell = cellScanDao.getAll()
-
         file.bufferedWriter().use { w ->
             w.append("{\"type\":\"FeatureCollection\",\"features\":[")
             var first = true
 
-            for (r in wifi) {
+            forEachPage({ limit, offset -> wifiScanDao.getPage(limit, offset) }) { r ->
                 if (!first) w.append(",")
                 first = false
                 val props = StringBuilder()
@@ -47,7 +44,7 @@ class GeoJsonExporter @Inject constructor(
                 w.append(feature(r.longitude, r.latitude, r.altitude, props.toString()))
             }
 
-            for (r in bt) {
+            forEachPage({ limit, offset -> btScanDao.getPage(limit, offset) }) { r ->
                 if (!first) w.append(",")
                 first = false
                 val props = StringBuilder()
@@ -62,7 +59,7 @@ class GeoJsonExporter @Inject constructor(
                 w.append(feature(r.longitude, r.latitude, r.altitude, props.toString()))
             }
 
-            for (r in cell) {
+            forEachPage({ limit, offset -> cellScanDao.getPage(limit, offset) }) { r ->
                 if (!first) w.append(",")
                 first = false
                 val props = StringBuilder()
@@ -97,6 +94,19 @@ class GeoJsonExporter @Inject constructor(
     }
 
     private companion object {
+        const val PAGE_SIZE = 2_000
+
+        /** Pages through [fetchPage] until a short (or empty) page signals the end. */
+        suspend fun <T> forEachPage(fetchPage: suspend (limit: Int, offset: Int) -> List<T>, action: (T) -> Unit) {
+            var offset = 0
+            while (true) {
+                val page = fetchPage(PAGE_SIZE, offset)
+                page.forEach(action)
+                if (page.size < PAGE_SIZE) break
+                offset += page.size
+            }
+        }
+
         fun appendProp(sb: StringBuilder, key: String, value: Any?) {
             if (sb.isNotEmpty()) sb.append(",")
             sb.append("\"").append(key).append("\":").append(jsonValue(value))

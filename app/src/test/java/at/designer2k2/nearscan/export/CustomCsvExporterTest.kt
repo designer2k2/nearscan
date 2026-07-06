@@ -27,9 +27,9 @@ class CustomCsvExporterTest {
     @Before
     fun setUp() {
         outputDir = createTempDir(prefix = "custom-test")
-        coEvery { wifiScanDao.getAll() } returns emptyList()
-        coEvery { btScanDao.getAll() } returns emptyList()
-        coEvery { cellScanDao.getAll() } returns emptyList()
+        coEvery { wifiScanDao.getPage(any(), any()) } returns emptyList()
+        coEvery { btScanDao.getPage(any(), any()) } returns emptyList()
+        coEvery { cellScanDao.getPage(any(), any()) } returns emptyList()
     }
 
     @After
@@ -123,31 +123,31 @@ class CustomCsvExporterTest {
 
     @Test
     fun `wifi row has type WIFI`() {
-        coEvery { wifiScanDao.getAll() } returns listOf(makeWifiEntity())
+        coEvery { wifiScanDao.getPage(any(), any()) } returns listOf(makeWifiEntity())
         assertEquals("WIFI", rowFor("WIFI").split(",").first())
     }
 
     @Test
     fun `bt row has type BT`() {
-        coEvery { btScanDao.getAll() } returns listOf(makeBtEntity())
+        coEvery { btScanDao.getPage(any(), any()) } returns listOf(makeBtEntity())
         assertEquals("BT", rowFor("BT").split(",").first())
     }
 
     @Test
     fun `cell row has type CELL`() {
-        coEvery { cellScanDao.getAll() } returns listOf(makeCellEntity())
+        coEvery { cellScanDao.getPage(any(), any()) } returns listOf(makeCellEntity())
         assertEquals("CELL", rowFor("CELL").split(",").first())
     }
 
     @Test
     fun `ssid with comma is quoted`() {
-        coEvery { wifiScanDao.getAll() } returns listOf(makeWifiEntity(ssid = "My,Network"))
+        coEvery { wifiScanDao.getPage(any(), any()) } returns listOf(makeWifiEntity(ssid = "My,Network"))
         assertTrue(rowFor("WIFI").contains("\"My,Network\""))
     }
 
     @Test
     fun `ssid with double quote is escaped`() {
-        coEvery { wifiScanDao.getAll() } returns listOf(makeWifiEntity(ssid = "My\"Net"))
+        coEvery { wifiScanDao.getPage(any(), any()) } returns listOf(makeWifiEntity(ssid = "My\"Net"))
         // A literal inner quote is doubled and the field wrapped in quotes -> "My""Net"
         assertTrue(rowFor("WIFI").contains("\"My\"\"Net\""))
     }

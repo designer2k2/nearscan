@@ -38,4 +38,11 @@
     <string name="notification_running">Scanning the RF environment</string>
     <string name="no_location_set">No location set</string>
     <string name="notification_counts">WiFi: %1$d  BT: %2$d  Cell: %3$d</string>
+
+    <string name="gps_accuracy">Accuracy: %1$.0f m</string>
+    <string name="location_invalid">Enter a valid latitude and longitude</string>
+
+    <string name="export_now">Export Now</string>
+    <string name="export_success">Exported to %1$s</string>
+    <string name="export_failed">Export failed: %1$s</string>
 </resources>

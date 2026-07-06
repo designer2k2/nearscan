@@ -6,10 +6,13 @@ import androidx.lifecycle.viewModelScope
 import at.designer2k2.nearscan.db.BtScanDao
 import at.designer2k2.nearscan.db.CellScanDao
 import at.designer2k2.nearscan.db.WifiScanDao
+import at.designer2k2.nearscan.export.ExportManager
+import at.designer2k2.nearscan.location.GpsFix
 import at.designer2k2.nearscan.location.LocationHelper
 import at.designer2k2.nearscan.prefs.NearScanSettings
 import at.designer2k2.nearscan.prefs.SettingsDataStore
 import at.designer2k2.nearscan.service.ScanService
+import java.io.File
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +22,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+/** Result of a manual export, shown once as a Snackbar then cleared. */
+data class ExportResult(val success: Boolean, val message: String)
 
 data class MainUiState(
     val isRunning: Boolean = false,
@@ -32,7 +38,9 @@ data class MainUiState(
     val sessionSeconds: Long = 0,
     val settings: NearScanSettings = NearScanSettings(),
     val isGettingFix: Boolean = false,
-    val gpsFixResult: Triple<Double, Double, Double>? = null,  // lat, lon, alt — consumed once then cleared
+    val gpsFixResult: GpsFix? = null,  // consumed once then cleared
+    val isExporting: Boolean = false,
+    val exportResult: ExportResult? = null,  // consumed once then cleared
 )
 
 @HiltViewModel
@@ -43,6 +51,7 @@ class MainViewModel @Inject constructor(
     btScanDao: BtScanDao,
     cellScanDao: CellScanDao,
     private val locationHelper: LocationHelper,
+    private val exportManager: ExportManager,
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(MainUiState())
@@ -133,7 +142,12 @@ class MainViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isGettingFix = false,
-                        gpsFixResult = Triple(loc.latitude, loc.longitude, loc.altitude),
+                        gpsFixResult = GpsFix(
+                            latitude = loc.latitude,
+                            longitude = loc.longitude,
+                            altitude = loc.altitude,
+                            accuracyMeters = if (loc.hasAccuracy()) loc.accuracy else null,
+                        ),
                     )
                 }
             } else {
@@ -150,5 +164,33 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             settingsDataStore.update(settings)
         }
+    }
+
+    /** Exports the current database using the currently-configured format and output folder. */
+    fun exportNow() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isExporting = true) }
+            val settings = uiState.value.settings
+            val context = getApplication<Application>()
+            val outputDir = if (settings.outputFolder.isNotBlank()) {
+                File(settings.outputFolder)
+            } else {
+                File(context.getExternalFilesDir(null), "NearScan")
+            }
+            val result = runCatching { exportManager.export(settings.exportFormat, outputDir) }
+            _uiState.update {
+                it.copy(
+                    isExporting = false,
+                    exportResult = result.fold(
+                        onSuccess = { file -> ExportResult(success = true, message = file.name) },
+                        onFailure = { e -> ExportResult(success = false, message = e.message ?: "") },
+                    ),
+                )
+            }
+        }
+    }
+
+    fun consumeExportResult() {
+        _uiState.update { it.copy(exportResult = null) }
     }
 }

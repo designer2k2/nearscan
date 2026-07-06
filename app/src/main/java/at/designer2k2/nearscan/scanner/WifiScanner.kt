@@ -1,10 +1,13 @@
 package at.designer2k2.nearscan.scanner
 
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
+import androidx.core.content.ContextCompat
 import at.designer2k2.nearscan.db.WifiScanEntity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -14,9 +17,9 @@ import javax.inject.Singleton
 import kotlin.coroutines.resume
 
 /**
- * Stub WiFi scanner. Triggers [WifiManager.startScan] and collects the results delivered
+ * WiFi scanner. Triggers [WifiManager.startScan] and collects the results delivered
  * via [WifiManager.SCAN_RESULTS_AVAILABLE_ACTION]. Returns an empty list if scanning is
- * unavailable / throttled.
+ * unavailable / throttled / not permitted.
  */
 @Singleton
 class WifiScanner @Inject constructor(
@@ -25,6 +28,13 @@ class WifiScanner @Inject constructor(
 ) {
     @Suppress("DEPRECATION", "MissingPermission")
     suspend fun scan(): List<WifiScanEntity> {
+        // Android 9+ requires ACCESS_FINE_LOCATION to receive populated WiFi scan results.
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            return emptyList()
+        }
+
         val now = System.currentTimeMillis()
         return withTimeoutOrNull(SCAN_TIMEOUT_MS) {
             suspendCancellableCoroutine { cont ->

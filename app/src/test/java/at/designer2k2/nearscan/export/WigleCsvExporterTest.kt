@@ -1,5 +1,9 @@
 package at.designer2k2.nearscan.export
 
+import at.designer2k2.nearscan.db.BtScanDao
+import at.designer2k2.nearscan.db.BtScanEntity
+import at.designer2k2.nearscan.db.CellScanDao
+import at.designer2k2.nearscan.db.CellScanEntity
 import at.designer2k2.nearscan.db.WifiScanDao
 import at.designer2k2.nearscan.db.WifiScanEntity
 import io.mockk.coEvery
@@ -15,12 +19,17 @@ import java.io.File
 class WigleCsvExporterTest {
 
     private val wifiScanDao: WifiScanDao = mockk()
-    private val exporter = WigleCsvExporter(wifiScanDao)
+    private val btScanDao: BtScanDao = mockk()
+    private val cellScanDao: CellScanDao = mockk()
+    private val exporter = WigleCsvExporter(wifiScanDao, btScanDao, cellScanDao)
     private lateinit var outputDir: File
 
     @Before
     fun setUp() {
         outputDir = createTempDir(prefix = "wigle-test")
+        coEvery { wifiScanDao.getPage(any(), any()) } returns emptyList()
+        coEvery { btScanDao.getPage(any(), any()) } returns emptyList()
+        coEvery { cellScanDao.getPage(any(), any()) } returns emptyList()
     }
 
     @After
@@ -50,8 +59,33 @@ class WigleCsvExporterTest {
         band = "2.4",
     )
 
+    private fun makeBtEntity(): BtScanEntity = BtScanEntity(
+        timestamp = 1_718_352_000_000L,
+        latitude = 47.0,
+        longitude = 11.0,
+        altitude = 574.0,
+        address = "AA:BB:CC:11:22:33",
+        name = "Speaker",
+        rssi = -70,
+        deviceClass = 1024,
+        isBle = true,
+    )
+
+    private fun makeCellEntity(): CellScanEntity = CellScanEntity(
+        timestamp = 1_718_352_000_000L,
+        latitude = 47.0,
+        longitude = 11.0,
+        altitude = 574.0,
+        mcc = 232,
+        mnc = 1,
+        lac = 100,
+        cid = 12345L,
+        rssi = -95,
+        technology = "LTE",
+    )
+
     private fun export(entities: List<WifiScanEntity>): File {
-        coEvery { wifiScanDao.getAll() } returns entities
+        coEvery { wifiScanDao.getPage(any(), any()) } returns entities
         return runBlocking { exporter.export(outputDir) }
     }
 
@@ -103,5 +137,31 @@ class WigleCsvExporterTest {
     fun `export with empty list writes only headers`() {
         val file = export(emptyList())
         assertEquals(2, lines(file).size)
+    }
+
+    @Test
+    fun `BT row is included with type BT`() {
+        coEvery { btScanDao.getPage(any(), any()) } returns listOf(makeBtEntity())
+        val file = runBlocking { exporter.export(outputDir) }
+        val row = lines(file).drop(2).first { it.split(",").last() == "BT" }
+        assertTrue(row.startsWith("AA:BB:CC:11:22:33,Speaker,"))
+    }
+
+    @Test
+    fun `Cell row is included with technology as Type`() {
+        coEvery { cellScanDao.getPage(any(), any()) } returns listOf(makeCellEntity())
+        val file = runBlocking { exporter.export(outputDir) }
+        val row = lines(file).drop(2).first { it.split(",").last() == "LTE" }
+        assertTrue(row.contains("232-1-12345"))
+    }
+
+    @Test
+    fun `export includes wifi, bt, and cell rows together`() {
+        coEvery { wifiScanDao.getPage(any(), any()) } returns listOf(makeWifiEntity())
+        coEvery { btScanDao.getPage(any(), any()) } returns listOf(makeBtEntity())
+        coEvery { cellScanDao.getPage(any(), any()) } returns listOf(makeCellEntity())
+        val file = runBlocking { exporter.export(outputDir) }
+        // 2 header lines + 3 data rows
+        assertEquals(5, lines(file).size)
     }
 }

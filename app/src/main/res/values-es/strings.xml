@@ -32,4 +32,9 @@
     <string name="notification_running">Escaneando el entorno de RF</string>
     <string name="no_location_set">Sin ubicación establecida</string>
     <string name="notification_counts">WiFi: %1$d  BT: %2$d  Cel: %3$d</string>
+    <string name="gps_accuracy">Precisión: %1$.0f m</string>
+    <string name="location_invalid">Introduce una latitud y longitud válidas</string>
+    <string name="export_now">Exportar ahora</string>
+    <string name="export_success">Exportado a %1$s</string>
+    <string name="export_failed">Error al exportar: %1$s</string>
 </resources>

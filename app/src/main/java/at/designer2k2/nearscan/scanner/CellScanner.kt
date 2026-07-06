@@ -1,5 +1,8 @@
 package at.designer2k2.nearscan.scanner
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import android.telephony.CellIdentityNr
 import android.telephony.CellInfo
@@ -9,7 +12,9 @@ import android.telephony.CellInfoNr
 import android.telephony.CellInfoWcdma
 import android.telephony.CellSignalStrengthNr
 import android.telephony.TelephonyManager
+import androidx.core.content.ContextCompat
 import at.designer2k2.nearscan.db.CellScanEntity
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -21,11 +26,19 @@ import javax.inject.Singleton
  */
 @Singleton
 class CellScanner @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val telephonyManager: TelephonyManager?,
 ) {
     @Suppress("MissingPermission")
     suspend fun scan(): List<CellScanEntity> = withContext(Dispatchers.IO) {
         val tm = telephonyManager ?: return@withContext emptyList()
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE)
+            != PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            return@withContext emptyList()
+        }
         val now = System.currentTimeMillis()
         val cellInfo = tm.allCellInfo ?: return@withContext emptyList()
 

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -25,13 +26,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import at.designer2k2.nearscan.R
+import at.designer2k2.nearscan.location.GpsFix
 
 @Composable
 fun LocationDialog(
     initialLat: Double?,
     initialLon: Double?,
     initialAlt: Double?,
-    gpsFix: Triple<Double, Double, Double>? = null,
+    gpsFix: GpsFix? = null,
     onGpsFixConsumed: () -> Unit = {},
     isGettingFix: Boolean = false,
     onGetGpsFix: () -> Unit,
@@ -41,17 +43,22 @@ fun LocationDialog(
     var lat by remember { mutableStateOf(initialLat?.toString() ?: "") }
     var lon by remember { mutableStateOf(initialLon?.toString() ?: "") }
     var alt by remember { mutableStateOf(initialAlt?.toString() ?: "") }
+    var accuracyMeters by remember { mutableStateOf<Float?>(null) }
+    var validationError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(gpsFix) {
         if (gpsFix != null) {
-            lat = gpsFix.first.toString()
-            lon = gpsFix.second.toString()
-            alt = gpsFix.third.toString()
+            lat = gpsFix.latitude.toString()
+            lon = gpsFix.longitude.toString()
+            alt = gpsFix.altitude.toString()
+            accuracyMeters = gpsFix.accuracyMeters
+            validationError = null
             onGpsFixConsumed()
         }
     }
 
     val decimalKeyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+    val invalidLocationMessage = stringResource(R.string.location_invalid)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -60,7 +67,7 @@ fun LocationDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = lat,
-                    onValueChange = { lat = it },
+                    onValueChange = { lat = it; validationError = null },
                     label = { Text(stringResource(R.string.latitude)) },
                     keyboardOptions = decimalKeyboard,
                     singleLine = true,
@@ -68,7 +75,7 @@ fun LocationDialog(
                 )
                 OutlinedTextField(
                     value = lon,
-                    onValueChange = { lon = it },
+                    onValueChange = { lon = it; validationError = null },
                     label = { Text(stringResource(R.string.longitude)) },
                     keyboardOptions = decimalKeyboard,
                     singleLine = true,
@@ -100,6 +107,20 @@ fun LocationDialog(
                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
                     }
                 }
+                accuracyMeters?.let { accuracy ->
+                    Text(
+                        text = stringResource(R.string.gps_accuracy, accuracy),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                validationError?.let { error ->
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
         },
         confirmButton = {
@@ -110,6 +131,8 @@ fun LocationDialog(
                     val altV = alt.toDoubleOrNull() ?: 0.0
                     if (latV != null && lonV != null) {
                         onSave(latV, lonV, altV)
+                    } else {
+                        validationError = invalidLocationMessage
                     }
                 },
             ) {

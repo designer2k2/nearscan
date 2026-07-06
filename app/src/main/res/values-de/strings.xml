@@ -32,4 +32,9 @@
     <string name="notification_running">RF-Umgebung wird gescannt</string>
     <string name="no_location_set">Kein Standort festgelegt</string>
     <string name="notification_counts">WLAN: %1$d  BT: %2$d  Mobilfunk: %3$d</string>
+    <string name="gps_accuracy">Genauigkeit: %1$.0f m</string>
+    <string name="location_invalid">Bitte gültige Breiten- und Längengrad eingeben</string>
+    <string name="export_now">Jetzt exportieren</string>
+    <string name="export_success">Exportiert nach %1$s</string>
+    <string name="export_failed">Export fehlgeschlagen: %1$s</string>
 </resources>

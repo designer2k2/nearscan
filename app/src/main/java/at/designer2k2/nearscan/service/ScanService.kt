@@ -27,21 +27,31 @@ import at.designer2k2.nearscan.scanner.CellScanner
 import at.designer2k2.nearscan.scanner.WifiScanner
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
  * Foreground service that keeps the scan loops alive. Exposes its live status via a
  * companion [MutableStateFlow] that [at.designer2k2.nearscan.ui.MainViewModel] collects.
+ *
+ * Each scan type is supervised independently: a small coroutine watches
+ * `(enabled, intervalSec)` for that type and cancels/relaunches the inner loop whenever either
+ * changes, so toggling a scan type or dragging its interval slider takes effect immediately
+ * without needing to stop/restart the whole session. MQTT connect/disconnect is supervised the
+ * same way, so enabling MQTT mid-session actually connects instead of silently no-op'ing.
  */
 @AndroidEntryPoint
 class ScanService : Service() {
@@ -61,8 +71,9 @@ class ScanService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob())
     private val jobs = mutableListOf<Job>()
+    private val dedupTracker = DedupTracker()
 
-    // Live snapshot of settings, kept up to date by a collector so location and MQTT
+    // Live snapshot of settings, kept up to date by a collector so location, MQTT, and dedup
     // can be toggled mid-session.
     @Volatile private var currentSettings: NearScanSettings = NearScanSettings()
     private var currentLat: Double? = null
@@ -86,6 +97,7 @@ class ScanService : Service() {
     private fun startScanning() {
         if (status.value.isRunning) return
         taskerBroadcaster.reset()
+        dedupTracker.reset()
         status.update { it.copy(isRunning = true, sessionStartMs = System.currentTimeMillis()) }
         taskerBroadcaster.onScanStarted()
 
@@ -95,6 +107,13 @@ class ScanService : Service() {
             currentLat = settings.latitude
             currentLon = settings.longitude
             currentAlt = settings.altitude
+
+            withContext(Dispatchers.IO) {
+                val cutoff = System.currentTimeMillis() - RETENTION_DAYS * MS_PER_DAY
+                runCatching { wifiScanDao.deleteOlderThan(cutoff) }
+                runCatching { btScanDao.deleteOlderThan(cutoff) }
+                runCatching { cellScanDao.deleteOlderThan(cutoff) }
+            }
 
             // Keep settings + location live so changes mid-session are picked up.
             jobs += launch {
@@ -106,86 +125,130 @@ class ScanService : Service() {
                 }
             }
 
-            if (settings.mqttEnabled && settings.mqttBroker.isNotBlank()) {
-                runCatching { mqttClient.connect(settings.mqttBroker) }
+            // MQTT connect/disconnect reacts live to the enabled flag and broker URL.
+            jobs += launch(Dispatchers.IO) {
+                settingsDataStore.settings
+                    .map { it.mqttEnabled to it.mqttBroker }
+                    .distinctUntilChanged()
+                    .collect { (enabled, broker) ->
+                        if (enabled && broker.isNotBlank()) {
+                            runCatching { mqttClient.connect(broker) }
+                        } else {
+                            runCatching { mqttClient.disconnect() }
+                        }
+                    }
             }
 
-            if (settings.scanWifiEnabled) {
-                jobs += launch {
-                    loop(settings.intervalWifiSec) {
-                        val rows = wifiScanner.scan()
-                        val stamped = rows.map {
-                            it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
-                        }
-                        if (stamped.isNotEmpty()) wifiScanDao.insertAll(stamped)
-                        status.update { it.copy(wifiCount = it.wifiCount + stamped.size) }
-                        publishBatch(stamped)
-                        updateNotification()
-                        taskerBroadcaster.onNewWifi(stamped)
-                        val s = status.value
-                        taskerBroadcaster.onRoundComplete(s.wifiCount, s.btCount, s.cellCount)
-                    }
+            jobs += superviseScanType(
+                enabledSelector = { it.scanWifiEnabled },
+                intervalSelector = { it.intervalWifiSec },
+            ) {
+                val rows = wifiScanner.scan()
+                val stamped = rows.map {
+                    it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
                 }
+                val toStore = if (currentSettings.dedupEnabled) {
+                    stamped.filter { dedupTracker.shouldLogWifi(it.bssid, it.rssi) }
+                } else {
+                    stamped
+                }
+                if (toStore.isNotEmpty()) wifiScanDao.insertAll(toStore)
+                status.update { it.copy(wifiCount = it.wifiCount + stamped.size) }
+                publishBatch(toStore)
+                updateNotification()
+                taskerBroadcaster.onNewWifi(stamped)
+                val s = status.value
+                taskerBroadcaster.onRoundComplete(s.wifiCount, s.btCount, s.cellCount)
             }
-            if (settings.scanBtEnabled) {
-                jobs += launch {
-                    loop(settings.intervalBtSec) {
-                        val rows = bluetoothScanner.scan()
-                        val stamped = rows.map {
-                            it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
-                        }
-                        if (stamped.isNotEmpty()) btScanDao.insertAll(stamped)
-                        status.update { it.copy(btCount = it.btCount + stamped.size) }
-                        publishBatch(stamped)
-                        updateNotification()
-                        taskerBroadcaster.onNewBt(stamped)
-                        val s = status.value
-                        taskerBroadcaster.onRoundComplete(s.wifiCount, s.btCount, s.cellCount)
-                    }
+
+            jobs += superviseScanType(
+                enabledSelector = { it.scanBtEnabled },
+                intervalSelector = { it.intervalBtSec },
+            ) {
+                val rows = bluetoothScanner.scan()
+                val stamped = rows.map {
+                    it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
                 }
+                val toStore = if (currentSettings.dedupEnabled) {
+                    stamped.filter { dedupTracker.shouldLogBt(it.address, it.rssi) }
+                } else {
+                    stamped
+                }
+                if (toStore.isNotEmpty()) btScanDao.insertAll(toStore)
+                status.update { it.copy(btCount = it.btCount + stamped.size) }
+                publishBatch(toStore)
+                updateNotification()
+                taskerBroadcaster.onNewBt(stamped)
+                val s = status.value
+                taskerBroadcaster.onRoundComplete(s.wifiCount, s.btCount, s.cellCount)
             }
-            if (settings.scanBleEnabled) {
-                jobs += launch {
-                    loop(settings.intervalBleSec) {
-                        val rows = bleScanner.scan()
-                        val stamped = rows.map {
-                            it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
-                        }
-                        if (stamped.isNotEmpty()) btScanDao.insertAll(stamped)
-                        status.update { it.copy(btCount = it.btCount + stamped.size) }
-                        publishBatch(stamped)
-                        updateNotification()
-                        taskerBroadcaster.onNewBle(stamped)
-                        val s = status.value
-                        taskerBroadcaster.onRoundComplete(s.wifiCount, s.btCount, s.cellCount)
-                    }
+
+            jobs += superviseScanType(
+                enabledSelector = { it.scanBleEnabled },
+                intervalSelector = { it.intervalBleSec },
+            ) {
+                val rows = bleScanner.scan()
+                val stamped = rows.map {
+                    it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
                 }
+                val toStore = if (currentSettings.dedupEnabled) {
+                    stamped.filter { dedupTracker.shouldLogBt(it.address, it.rssi) }
+                } else {
+                    stamped
+                }
+                if (toStore.isNotEmpty()) btScanDao.insertAll(toStore)
+                status.update { it.copy(btCount = it.btCount + stamped.size) }
+                publishBatch(toStore)
+                updateNotification()
+                taskerBroadcaster.onNewBle(stamped)
+                val s = status.value
+                taskerBroadcaster.onRoundComplete(s.wifiCount, s.btCount, s.cellCount)
             }
-            if (settings.scanCellEnabled) {
-                jobs += launch {
-                    loop(settings.intervalCellSec) {
-                        val rows = cellScanner.scan()
-                        val stamped = rows.map {
-                            it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
-                        }
-                        if (stamped.isNotEmpty()) cellScanDao.insertAll(stamped)
-                        status.update { it.copy(cellCount = it.cellCount + stamped.size) }
-                        publishBatch(stamped)
-                        updateNotification()
-                        taskerBroadcaster.onNewCell(stamped)
-                        val s = status.value
-                        taskerBroadcaster.onRoundComplete(s.wifiCount, s.btCount, s.cellCount)
-                    }
+
+            jobs += superviseScanType(
+                enabledSelector = { it.scanCellEnabled },
+                intervalSelector = { it.intervalCellSec },
+            ) {
+                val rows = cellScanner.scan()
+                val stamped = rows.map {
+                    it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
                 }
+                // Cell records are never deduplicated — cell info changes are always significant.
+                if (stamped.isNotEmpty()) cellScanDao.insertAll(stamped)
+                status.update { it.copy(cellCount = it.cellCount + stamped.size) }
+                publishBatch(stamped)
+                updateNotification()
+                taskerBroadcaster.onNewCell(stamped)
+                val s = status.value
+                taskerBroadcaster.onRoundComplete(s.wifiCount, s.btCount, s.cellCount)
             }
         }
     }
 
+    /**
+     * Watches `(enabled, intervalSec)` selected from live settings and cancels/relaunches the
+     * inner loop whenever either changes, so a toggle or slider drag takes effect immediately.
+     */
+    private fun superviseScanType(
+        enabledSelector: (NearScanSettings) -> Boolean,
+        intervalSelector: (NearScanSettings) -> Int,
+        block: suspend () -> Unit,
+    ): Job = scope.launch {
+        var innerJob: Job? = null
+        settingsDataStore.settings
+            .map { enabledSelector(it) to intervalSelector(it) }
+            .distinctUntilChanged()
+            .collect { (enabled, intervalSec) ->
+                innerJob?.cancel()
+                innerJob = if (enabled) launch { loop(intervalSec, block) } else null
+            }
+    }
+
     /** Publishes a stamped batch over MQTT when enabled, including any enabled extra fields. */
-    private fun publishBatch(entities: List<Any>) {
-        if (entities.isEmpty()) return
+    private suspend fun publishBatch(entities: List<Any>) = withContext(Dispatchers.IO) {
+        if (entities.isEmpty()) return@withContext
         val settings = currentSettings
-        if (!settings.mqttEnabled) return
+        if (!settings.mqttEnabled) return@withContext
         val extras: ExtraFields? =
             if (settings.anyExtraFieldEnabled) runCatching { extraFieldsCollector.collect(settings) }.getOrNull()
             else null
@@ -210,6 +273,7 @@ class ScanService : Service() {
         runCatching { mqttClient.disconnect() }
         taskerBroadcaster.onScanStopped(s.wifiCount, s.btCount, s.cellCount, durationS)
         taskerBroadcaster.reset()
+        dedupTracker.reset()
         status.update { ScanStatus() }
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -280,6 +344,8 @@ class ScanService : Service() {
     companion object {
         private const val CHANNEL_ID = "nearscan_scanning"
         private const val NOTIFICATION_ID = 1001
+        private const val RETENTION_DAYS = 30L
+        private const val MS_PER_DAY = 24L * 60 * 60 * 1000
         const val ACTION_STOP = "at.designer2k2.nearscan.action.STOP"
 
         private val status = MutableStateFlow(ScanStatus())

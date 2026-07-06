@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -30,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.size
 import at.designer2k2.nearscan.R
 import at.designer2k2.nearscan.prefs.ExportFormat
 import at.designer2k2.nearscan.prefs.NearScanSettings
@@ -38,16 +41,18 @@ import at.designer2k2.nearscan.prefs.NearScanSettings
 fun AdvancedSettingsCard(
     settings: NearScanSettings,
     onSettingsChange: (NearScanSettings) -> Unit,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    isExporting: Boolean,
+    onExportNow: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-
     Card(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { expanded = !expanded },
+                    .clickable { onExpandedChange(!expanded) },
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -99,6 +104,21 @@ fun AdvancedSettingsCard(
                         selected = settings.exportFormat,
                         onSelected = { onSettingsChange(settings.copy(exportFormat = it)) },
                     )
+
+                    Button(
+                        onClick = onExportNow,
+                        enabled = !isExporting,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        if (isExporting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        } else {
+                            Text(stringResource(R.string.export_now))
+                        }
+                    }
 
                     ToggleRow(
                         label = stringResource(R.string.mqtt_enable),

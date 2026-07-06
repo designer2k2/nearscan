@@ -98,6 +98,13 @@ class TaskerBroadcaster @Inject constructor(
         }
     }
 
+    /**
+     * Fires after each individual scan type's own cycle finishes with the latest cumulative
+     * counts. Since WiFi/BT/BLE/Cell run on independent intervals, this fires once per
+     * scan-type tick — not once per synchronized "round" across all four types (a true
+     * synchronized round isn't meaningful when intervals differ, e.g. WiFi every 10s vs.
+     * Cell every 60s).
+     */
     fun onRoundComplete(wifiCount: Int, btCount: Int, cellCount: Int) {
         send(ACTION_ROUND_COMPLETE) {
             putExtra("wifi_count", wifiCount)

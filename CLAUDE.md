@@ -25,7 +25,12 @@ It is **not affiliated with WiGLE** but exports a WiGLE-compatible CSV by defaul
 - **Min SDK:** 26 (Android 8.0)
 - **Target SDK / Compile SDK:** 35
 - **Kotlin:** 2.0.21 (uses `org.jetbrains.kotlin.plugin.compose` — NOT legacy `composeOptions`)
-- **AGP:** 8.3.2 · **KSP:** 2.0.21-1.0.28 · **Hilt:** 2.51.1 (KSP — kapt is incompatible with Kotlin 2.x)
+- **AGP:** 8.6.1 · **KSP:** 2.0.21-1.0.28 · **Hilt:** 2.51.1 (KSP — kapt is incompatible with Kotlin 2.x)
+- **Gradle:** 8.7 (AGP 8.6.x requires Gradle 8.7+; bumped from 8.5 alongside the AGP upgrade)
+- Kotlin/KSP/Hilt/Room/Paho versions are deliberately pinned — they're a matched set (KSP version
+  is tied to the exact Kotlin patch; Hilt/Room bumps risk destabilizing without a reason forcing
+  the change). Only AGP + plain library versions (Compose BOM, Lifecycle, DataStore, coroutines,
+  core-ktx, test libs) were bumped — see Dependencies section.
 
 ---
 
@@ -52,11 +57,18 @@ It is **not affiliated with WiGLE** but exports a WiGLE-compatible CSV by defaul
   - Cell: 60 seconds
 - Range: 1 second to 300 seconds per type (UI slider: `1f..300f`)
 - Implemented via coroutine loops (`while (scope.isActive) { block(); delay(intervalMs) }`) inside a foreground Service
+- **Live-reactive**: toggling a scan type or dragging its interval slider takes effect immediately
+  mid-session — no stop/restart needed. Each type is supervised by `ScanService.superviseScanType()`,
+  which watches `(enabled, intervalSec)` from the live settings `Flow` and cancels/relaunches the
+  inner loop job whenever either changes. The same live-reactivity applies to the Tasker
+  `CMD_SET_INTERVAL` command.
 
 ### Foreground Service
 - Runs as Android Foreground Service with persistent notification
 - Notification shows: status (running/idle), counts, current interval
-- Survives screen-off, survives battery optimization (user prompted to exempt on first launch)
+- Survives screen-off; requests exemption from battery optimization / Doze on first launch via
+  `Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (`MainActivity.requestBatteryOptimizationExemption()`),
+  gated on a persisted `batteryOptPromptShown` flag so it only ever prompts once
 - Does NOT use WorkManager — continuous scanning requires a real foreground service
 
 ---
@@ -135,12 +147,18 @@ They do NOT appear in WiGLE CSV export (fixed schema).
 - Live counters per scan type (total unique found this session)
 - Session timer and total record count
 - "Advanced Settings" collapsible card at the bottom
+- The ⚙️ top-bar icon toggles/scrolls to the Advanced Settings card (its `expanded` state is
+  hoisted up to `MainScreen`, not owned internally by the card) — there is no separate Settings
+  screen
 
 ### Set Location Dialog
 - Lat / Lon / Altitude text fields (decimal degrees)
 - "Get GPS Fix" button — acquires single fix, populates fields, stops GPS
 - "Save" / "Cancel"
-- Shows accuracy of last GPS fix
+- Shows accuracy of last GPS fix ✅ implemented — `location.GpsFix` carries `accuracyMeters` from
+  `Location.hasAccuracy()`/`.accuracy`, displayed below the GPS fix button
+- Save shows an inline validation error (`location_invalid` string) instead of silently doing
+  nothing when lat/lon can't be parsed
 
 ### Advanced Settings (collapsible card, collapsed by default)
 
@@ -154,9 +172,13 @@ They do NOT appear in WiGLE CSV export (fixed schema).
 
 **Output**
 - Export format: `[WiGLE CSV ▼]` (WiGLE CSV / Custom CSV / GeoJSON / SQLite dump) ✅ implemented
-- MQTT: [ ] Enable → broker / topic fields appear ✅ implemented
+- **Export Now** button ✅ implemented — triggers `MainViewModel.exportNow()` directly (no Tasker
+  required); shows a Snackbar with the result. This is the only in-app export trigger besides the
+  Tasker `CMD_EXPORT` broadcast.
+- MQTT: [ ] Enable → broker / topic fields appear ✅ implemented; connects/disconnects live —
+  enabling mid-session actually connects instead of silently no-op'ing
 - Keep screen on while running: [ ] toggle ✅ implemented
-- Deduplicate: [ ] toggle ✅ implemented
+- Deduplicate: [ ] toggle ✅ implemented in UI **and** in `ScanService` (see Deduplication below)
 
 **Not yet in UI (settings exist in DataStore, UI controls not yet built):**
 - WiFi band filter (2.4 / 5 / 6 GHz) — `wifiBands` key persisted
@@ -183,7 +205,8 @@ Header line 2 (columns):
 MAC,SSID,AuthMode,FirstSeen,Channel,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,Type
 ```
 
-Type values: `WIFI` / `BT` / `GSM` / `LTE` / `NR`
+Type values: `WIFI` / `BT` (Classic + BLE) / `GSM` / `LTE` / `WCDMA` / `NR` (cell rows use the
+entity's `technology` field directly as Type)
 
 ### 2. Custom CSV
 All fields including extra logged fields. Schema is self-documenting (header row describes all columns present).
@@ -193,6 +216,12 @@ FeatureCollection of Points. Each network/device is a Feature with coordinates a
 
 ### 4. SQLite Dump
 Direct export of the Room database file. Full fidelity, queryable with any SQLite tool.
+
+### Streaming / memory bound (all file exporters)
+WiGLE CSV, Custom CSV, and GeoJSON all read each table **page-by-page** (`ScanDao.getPage(limit, offset)`,
+2,000 rows/page) rather than loading the full table into memory via `getAll()`. This keeps memory
+use bounded regardless of how many rows a multi-day session has accumulated. `getAll()` is kept on
+each DAO only because `NearScanContentProvider` still uses it for live Tasker queries.
 
 ### 5. MQTT (live, not a file export)
 Publishes JSON payload per scan result to configured broker/topic.
@@ -227,7 +256,8 @@ nearscan/
 │       │   ├── di/
 │       │   │   └── AppModule.kt             # Hilt @Singleton providers (DB, DAOs, system services)
 │       │   ├── service/
-│       │   │   └── ScanService.kt           # Foreground service, orchestrates all scanners
+│       │   │   ├── ScanService.kt           # Foreground service; per-type reactive supervisors
+│       │   │   └── DedupTracker.kt          # Pure-Kotlin ±3dBm dedup logic (unit-tested directly)
 │       │   ├── scanner/
 │       │   │   ├── WifiScanner.kt           # WifiManager + SCAN_RESULTS_AVAILABLE_ACTION
 │       │   │   ├── BluetoothScanner.kt      # Classic BT startDiscovery() + ACTION_FOUND
@@ -236,7 +266,8 @@ nearscan/
 │       │   ├── extra/
 │       │   │   └── ExtraFieldsCollector.kt  # Battery, screen, network, compass/tilt, memory
 │       │   ├── location/
-│       │   │   └── LocationHelper.kt        # Single GPS fix (requestSingleUpdate) + manual entry
+│       │   │   ├── LocationHelper.kt        # Single GPS fix (requestSingleUpdate) + manual entry
+│       │   │   └── GpsFix.kt                # lat/lon/alt/accuracy data class returned by a fix
 │       │   ├── db/
 │       │   │   ├── AppDatabase.kt           # Room database (name: nearscan.db, version 1)
 │       │   │   ├── ScanDao.kt               # WifiScanDao, BtScanDao, CellScanDao interfaces
@@ -287,6 +318,10 @@ JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ANDROID_HOME=/opt/android-sdk \
 
 # Output: /tmp/nearscan-build/outputs/apk/debug/app-debug.apk
 
+# Release APK (minified + resource-shrunk; verified buildable, unsigned)
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ANDROID_HOME=/opt/android-sdk \
+  ./gradlew assembleRelease -PbuildDir=/tmp/nearscan-build --no-daemon
+
 # Unit tests
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ANDROID_HOME=/opt/android-sdk \
   ./gradlew testDebugUnitTest -PbuildDir=/tmp/nearscan-build --no-daemon
@@ -304,16 +339,16 @@ gcloud firebase test android run \
 
 ```kotlin
 // Compose BOM — pins all Compose library versions together
-implementation(platform("androidx.compose:compose-bom:2024.05.00"))
+implementation(platform("androidx.compose:compose-bom:2024.12.01"))
 implementation("androidx.compose.ui:ui")
 implementation("androidx.compose.ui:ui-tooling-preview")
 implementation("androidx.compose.material3:material3")
-implementation("androidx.activity:activity-compose:1.9.0")
+implementation("androidx.activity:activity-compose:1.9.3")
 debugImplementation("androidx.compose.ui:ui-tooling")
 
 // ViewModel + StateFlow (no LiveData needed)
-implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
+implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
 
 // Hilt DI (KSP — NOT kapt; kapt is incompatible with Kotlin 2.x)
 implementation("com.google.dagger:hilt-android:2.51.1")
@@ -326,14 +361,18 @@ implementation("androidx.room:room-ktx:2.6.1")
 ksp("androidx.room:room-compiler:2.6.1")
 
 // DataStore (replaces SharedPreferences)
-implementation("androidx.datastore:datastore-preferences:1.1.1")
+implementation("androidx.datastore:datastore-preferences:1.1.2")
 
 // Coroutines
-implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
+implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
 // MQTT (Eclipse Paho v3 client only — Paho Android Service is deprecated/broken on Android 12+)
 implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
 ```
+
+Kotlin 2.0.21 / KSP 2.0.21-1.0.28 / Hilt 2.51.1 / Room 2.6.1 / Paho 1.2.5 are deliberately left
+pinned (see App Name & Identity section) — only AGP and the plain library versions above were
+bumped in the 2026 dependency refresh.
 
 ---
 
@@ -367,6 +406,12 @@ implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
 <!-- MQTT -->
 <uses-permission android:name="android.permission.INTERNET"/>
 
+<!-- Persistent foreground-service notification (Android 13+) -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+<!-- Doze/App Standby exemption prompt (see Foreground Service section) -->
+<uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+
 <!-- Tasker ContentProvider callers -->
 <uses-permission android:name="at.designer2k2.nearscan.permission.READ_DATA"/>
 <permission android:name="at.designer2k2.nearscan.permission.READ_DATA"
@@ -377,7 +422,11 @@ Runtime permissions to request on first launch:
 - `ACCESS_FINE_LOCATION` (required for WiFi scan results on Android 9+)
 - `BLUETOOTH_SCAN`
 - `BLUETOOTH_CONNECT`
+- `POST_NOTIFICATIONS` (API 33+ only)
 - `READ_PHONE_STATE`
+
+Plus the one-time (non-runtime-permission-dialog) `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
+system prompt described in Foreground Service above.
 
 ---
 
@@ -406,16 +455,33 @@ Runtime permissions to request on first launch:
 - `TelephonyManager.getAllCellInfo()` returns `List<CellInfo>`
 - Handle: `CellInfoGsm`, `CellInfoLte`, `CellInfoNr`, `CellInfoWcdma`
 - Extract signal strength from each type's `CellSignalStrength`
-- Requires `READ_PHONE_STATE` + `ACCESS_FINE_LOCATION`
+- Requires `READ_PHONE_STATE` + `ACCESS_FINE_LOCATION` — both explicitly checked in
+  `CellScanner.scan()` before touching `TelephonyManager`; `WifiScanner.scan()` explicitly checks
+  `ACCESS_FINE_LOCATION` too (Android 9+ requires it for populated WiFi scan results). A missing
+  permission returns an empty list rather than throwing.
 
-### Deduplication (optional, Advanced setting)
-- WiFi: skip record if same BSSID + RSSI within ±3 dBm since last log
-- BT: skip if same address + RSSI within ±3 dBm
-- Cell: always log (cell info changes are significant)
+### Deduplication (optional, Advanced setting) ✅ implemented
+- Logic lives in `service/DedupTracker.kt` — pure Kotlin, no Android dependency, unit-tested
+  directly (`DedupTrackerTest`)
+- WiFi: skip record if same BSSID + RSSI within ±3 dBm since last **logged** value (updates the
+  tracked RSSI each time a record is logged, so slow drift stays deduped)
+- BT (Classic + BLE share one tracker keyed by address): skip if same address + RSSI within ±3 dBm
+- Cell: always log (cell info changes are significant) — never passed through `DedupTracker`
 - Default: OFF (log everything)
+- Dedup only affects what's written to the DB and published over MQTT — the UI's live "found"
+  counters and the Tasker `NEW_*_FOUND` first-sighting broadcasts are based on raw scan results,
+  not the deduped set, so they're unaffected by this setting
+- `DedupTracker.reset()` is called on every scan session start/stop so state doesn't leak between
+  sessions
 
 ### Android Scan Throttle Workaround
 On Android 9+ WiFi scan throttling applies. In Developer Options there is a toggle to disable throttling — mention this in the app's help/about section for power users.
+
+### Data Retention ✅ implemented
+Each time a scan session starts (`ScanService.startScanning()`), records older than **30 days**
+are deleted from all three tables via `dao.deleteOlderThan(cutoff)` (already existed on each DAO,
+was previously dead code — now actually called). Keeps a long-running installation's DB size
+bounded without needing a settings UI for it. Not user-configurable in v1.
 
 ---
 
@@ -447,6 +513,7 @@ mqtt_broker               (string)
 mqtt_topic                (string, default "nearscan/data")
 keep_screen_on            (boolean, default false)
 dedup_enabled             (boolean, default false)
+battery_opt_prompt_shown  (boolean, default false)  -- gates the one-time Doze-exemption prompt
 extra_battery_level       (boolean, default false)
 extra_battery_charging    (boolean, default false)
 extra_battery_temp        (boolean, default false)
@@ -511,10 +578,15 @@ Tasker profile trigger: **Event › App › Intent Received**, fill in the actio
 | `at.designer2k2.nearscan.NEW_BT_FOUND` | `address`, `name`, `rssi` (int) | First time a BT Classic address is seen this session |
 | `at.designer2k2.nearscan.NEW_BLE_FOUND` | `address`, `name`, `rssi` (int) | First time a BLE address is seen this session |
 | `at.designer2k2.nearscan.NEW_CELL_FOUND` | `mcc` (int), `mnc` (int), `cid` (long), `rssi` (int), `tech` (String) | First time a cell CID is seen this session |
-| `at.designer2k2.nearscan.ROUND_COMPLETE` | `wifi_count` (int), `bt_count` (int), `cell_count` (int), `timestamp` (long) | One full scan round finishes |
+| `at.designer2k2.nearscan.ROUND_COMPLETE` | `wifi_count` (int), `bt_count` (int), `cell_count` (int), `timestamp` (long) | One scan **type's** cycle finishes (see note below) |
 | `at.designer2k2.nearscan.EXPORT_COMPLETE` | `file_path` (String), `format` (String), `record_count` (Long) | An export file is written |
 
 `NEW_*` fires only on the **first** sighting per session; repeat detections do not fire individual events (use `ROUND_COMPLETE` counters instead).
+
+**`ROUND_COMPLETE` is per scan-type, not a synchronized 4-way round:** WiFi/BT/BLE/Cell run on
+independent intervals (e.g. WiFi every 10s, Cell every 60s), so there's no meaningful instant when
+all four are simultaneously "done." It fires once after each individual type's cycle, carrying the
+latest cumulative counts for all three counters at that moment — not once per synchronized round.
 
 **Implementation:** `ipc/TaskerBroadcaster.kt` — singleton helper injected into `ScanService`; calls `context.sendBroadcast(Intent(action).apply { putExtra(…) })`.
 
@@ -533,7 +605,7 @@ Tasker task action: **Action › Send Intent**. Set **Package** = `at.designer2k
 | `at.designer2k2.nearscan.CMD_SET_LOCATION` | `lat` (double), `lon` (double), `alt` (double) | Update static coordinates (persisted to DataStore) |
 | `at.designer2k2.nearscan.CMD_SET_INTERVAL` | `type` (String: wifi/bt/ble/cell), `interval_sec` (int) | Change a scan interval at runtime |
 
-**Implementation:** `ipc/CommandReceiver.kt` — `BroadcastReceiver`, delegates to `ScanService.start()` / `stop()` or `SettingsManager` coroutine scope for settings mutations.
+**Implementation:** `ipc/CommandReceiver.kt` — `BroadcastReceiver`, delegates to `ScanService.start()` / `stop()` for scan control, or a `goAsync()` + `Dispatchers.IO` coroutine calling `SettingsDataStore` for settings mutations (`CMD_SET_LOCATION`, `CMD_SET_INTERVAL`) and `ExportManager` (`CMD_EXPORT`).
 
 **Manifest:**
 ```xml
@@ -634,6 +706,49 @@ ipc/
 | CommandReceiver (incoming) | Custom action strings are exempt from the implicit broadcast ban; `android:exported="true"` required on API 31+ (enforced by AGP lint) |
 | ContentProvider `exported` | Must be explicit `android:exported="true"` on API 31+; the `READ_DATA` permission prevents blind access from unrelated apps |
 | `runBlocking` in ContentProvider | Acceptable — ContentProvider `query()` is called on a Binder thread, not the main thread; blocking there does not ANR the UI |
+
+---
+
+## Unit Testing Notes
+
+No Robolectric dependency — unit tests run against the plain Android SDK stub jar with
+`testOptions.unitTests.isReturnDefaultValues = true` in `app/build.gradle.kts`. This has one
+important consequence: **a real (non-mocked) framework object's methods are no-ops that return
+defaults** (`null`/`0`/`false`), not real working implementations. So constructing a real
+`Intent`, calling `.putExtra(...)` on it, then reading it back via `.getStringExtra(...)` will NOT
+round-trip — both calls silently hit the stub. This is why `TaskerBroadcasterTest` only asserts on
+*how many times* `Context.sendBroadcast()` was called (a MockK-intercepted method on a mocked
+`Context`, which works fine), never on the real `Intent`'s field contents.
+
+The workaround used throughout: mock the Android framework objects your code depends on
+(`Context`, `WifiManager`, `TelephonyManager`, `LocationManager`, `Location`, etc.) via
+`mockk()`/`mockk(relaxed = true)` — MockK intercepts calls on *mocked* instances correctly
+regardless of the stub jar, since it never reaches the real stub method body. Only *real*
+(self-constructed) Android objects are affected by the stub-default behavior. If a test needs to
+assert on a real framework object's post-construction state (Intent extras, Cursor rows,
+ContentValues), it needs Robolectric — not currently a dependency.
+
+Newer test coverage added under this constraint: `DedupTrackerTest` (pure Kotlin, no Android
+deps — the most reliable kind), `TaskerBroadcasterTest` (call-count based), `LocationHelperTest`
+and `CellScannerTest`/`WifiScannerTest` (permission-guard-clause paths, using mocked `Context`).
+`ScanService`, `CommandReceiver`, and `NearScanContentProvider` remain untested at the unit level —
+they're thin orchestration wrappers around already-tested pieces (`DedupTracker`,
+`TaskerBroadcaster`, `ExportManager`, the scanners), and meaningfully testing the
+`Service`/`BroadcastReceiver`/`ContentProvider` lifecycle itself would need Robolectric or
+instrumented tests.
+
+**Gotcha: `runTest` hangs forever if a ViewModel's `init` block launches an unbounded
+`while (true) { delay(...) }` loop.** `MainViewModelTest` sets `Dispatchers.setMain(testDispatcher)`,
+so `viewModelScope` (which resolves to `Dispatchers.Main.immediate`) shares the exact same
+`TestCoroutineScheduler` as the test's own `runTest` block — not just the same dispatcher type, the
+same virtual clock. `MainViewModel`'s session-timer ticker coroutine perpetually reschedules itself
+every virtual second and never completes. `runTest` calls an implicit `advanceUntilIdle()` when the
+test body returns, and since the scheduler is shared, it tries to drain that infinite ticker too —
+spinning forever at ~100% CPU with zero output (looks exactly like a stalled JVM fork, not an
+assertion failure or timeout). Fix: cancel `vm.viewModelScope` (via the `cancel()` extension on
+`CoroutineScope`) *before* the test body returns, not in `@After` — `@After` runs only once `runTest`
+itself returns, which never happens if the ticker is still alive. `MainViewModelTest` centralizes
+this in a `runVmTest { vm -> ... }` helper that cancels in a `finally` block.
 
 ---
 

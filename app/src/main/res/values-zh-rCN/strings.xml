@@ -38,4 +38,14 @@
     <string name="export_success">已导出至 %1$s</string>
     <string name="export_failed">导出失败：%1$s</string>
     <string name="share_export_title">分享导出</string>
+    <string name="notification_start_blocked">无法在后台启动扫描。点击以打开NearScan并手动启动。</string>
+    <string name="permission_warning_title">权限被拒绝 — 在授予权限之前，%1$s将无法找到任何内容。</string>
+    <string name="permission_affects_wifi">WiFi扫描</string>
+    <string name="permission_affects_bluetooth">蓝牙扫描</string>
+    <string name="permission_affects_cell">蜂窝网络扫描</string>
+    <string name="open_settings">打开设置</string>
+    <string name="wifi_min_rssi">最小RSSI：%1$d dBm</string>
+    <string name="wifi_bands">WiFi频段</string>
+    <string name="auto_export_off">自动导出：关闭</string>
+    <string name="auto_export_every">自动导出：每%1$d分钟</string>
 </resources>

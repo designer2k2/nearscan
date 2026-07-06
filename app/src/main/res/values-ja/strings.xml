@@ -38,4 +38,14 @@
     <string name="export_success">%1$s にエクスポートしました</string>
     <string name="export_failed">エクスポート失敗: %1$s</string>
     <string name="share_export_title">エクスポートを共有</string>
+    <string name="notification_start_blocked">バックグラウンドでスキャンを開始できませんでした。タップしてNearScanを開き、手動で開始してください。</string>
+    <string name="permission_warning_title">権限が拒否されました — 許可されるまで%1$sは何も見つけられません。</string>
+    <string name="permission_affects_wifi">WiFiスキャン</string>
+    <string name="permission_affects_bluetooth">Bluetoothスキャン</string>
+    <string name="permission_affects_cell">セルスキャン</string>
+    <string name="open_settings">設定を開く</string>
+    <string name="wifi_min_rssi">最小RSSI: %1$d dBm</string>
+    <string name="wifi_bands">WiFi帯域</string>
+    <string name="auto_export_off">自動エクスポート: オフ</string>
+    <string name="auto_export_every">自動エクスポート: %1$d分ごと</string>
 </resources>

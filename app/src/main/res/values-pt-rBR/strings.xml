@@ -38,4 +38,14 @@
     <string name="export_success">Exportado para %1$s</string>
     <string name="export_failed">Falha na exportação: %1$s</string>
     <string name="share_export_title">Compartilhar exportação</string>
+    <string name="notification_start_blocked">Não foi possível iniciar a varredura em segundo plano. Toque para abrir o NearScan e iniciar manualmente.</string>
+    <string name="permission_warning_title">Permissão negada — %1$s não encontrará nada até que seja concedida.</string>
+    <string name="permission_affects_wifi">Varredura de WiFi</string>
+    <string name="permission_affects_bluetooth">Varredura de Bluetooth</string>
+    <string name="permission_affects_cell">Varredura de rede celular</string>
+    <string name="open_settings">Abrir Configurações</string>
+    <string name="wifi_min_rssi">RSSI mín.: %1$d dBm</string>
+    <string name="wifi_bands">Bandas WiFi</string>
+    <string name="auto_export_off">Exportação automática: Desligada</string>
+    <string name="auto_export_every">Exportação automática: a cada %1$d min</string>
 </resources>

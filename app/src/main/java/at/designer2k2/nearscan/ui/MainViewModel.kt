@@ -12,7 +12,6 @@ import at.designer2k2.nearscan.location.LocationHelper
 import at.designer2k2.nearscan.prefs.NearScanSettings
 import at.designer2k2.nearscan.prefs.SettingsDataStore
 import at.designer2k2.nearscan.service.ScanService
-import java.io.File
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -176,12 +175,7 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isExporting = true) }
             val settings = uiState.value.settings
-            val context = getApplication<Application>()
-            val outputDir = if (settings.outputFolder.isNotBlank()) {
-                File(settings.outputFolder)
-            } else {
-                File(context.getExternalFilesDir(null), "NearScan")
-            }
+            val outputDir = exportManager.resolveOutputDir(settings.outputFolder)
             val result = runCatching { exportManager.export(settings.exportFormat, outputDir) }
             _uiState.update {
                 it.copy(

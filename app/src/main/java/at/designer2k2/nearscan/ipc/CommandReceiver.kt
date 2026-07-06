@@ -7,13 +7,13 @@ import at.designer2k2.nearscan.export.ExportManager
 import at.designer2k2.nearscan.prefs.ExportFormat
 import at.designer2k2.nearscan.prefs.SettingsDataStore
 import at.designer2k2.nearscan.service.ScanService
+import at.designer2k2.nearscan.util.FlexibleExtra
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.io.File
 import javax.inject.Inject
 
 /**
@@ -51,7 +51,7 @@ class CommandReceiver : BroadcastReceiver() {
                 val settings = settingsDataStore.settings.first()
                 val formatKey = intent.getStringExtra("format")
                 val format = ExportFormat.fromKey(formatKey)
-                val outputDir = resolveOutputDir(context, settings.outputFolder)
+                val outputDir = exportManager.resolveOutputDir(settings.outputFolder)
                 val file = exportManager.export(format, outputDir)
                 val count = exportManager.totalRecordCount()
                 taskerBroadcaster.onExportComplete(file, format.key, count)
@@ -63,9 +63,9 @@ class CommandReceiver : BroadcastReceiver() {
 
     private fun handleSetLocation(intent: Intent) {
         if (!intent.hasExtra("lat") || !intent.hasExtra("lon")) return
-        val lat = intent.getDoubleExtra("lat", 0.0)
-        val lon = intent.getDoubleExtra("lon", 0.0)
-        val alt = intent.getDoubleExtra("alt", 0.0)
+        val lat = intent.getFlexibleDouble("lat") ?: return
+        val lon = intent.getFlexibleDouble("lon") ?: return
+        val alt = intent.getFlexibleDouble("alt") ?: 0.0
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
@@ -78,7 +78,7 @@ class CommandReceiver : BroadcastReceiver() {
 
     private fun handleSetInterval(intent: Intent) {
         val type = intent.getStringExtra("type") ?: return
-        val intervalSec = intent.getIntExtra("interval_sec", -1)
+        val intervalSec = intent.getFlexibleInt("interval_sec") ?: return
         if (intervalSec <= 0) return
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
@@ -98,9 +98,11 @@ class CommandReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun resolveOutputDir(context: Context, folder: String): File =
-        if (folder.isNotBlank()) File(folder)
-        else File(context.getExternalFilesDir(null), "NearScan")
+    private fun Intent.getFlexibleDouble(key: String): Double? =
+        FlexibleExtra.parseDouble(getStringExtra(key), getDoubleExtra(key, Double.NaN))
+
+    private fun Intent.getFlexibleInt(key: String): Int? =
+        FlexibleExtra.parseInt(getStringExtra(key), getIntExtra(key, Int.MIN_VALUE))
 
     companion object {
         const val ACTION_START = "at.designer2k2.nearscan.CMD_START"

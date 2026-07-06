@@ -38,4 +38,14 @@
     <string name="export_success">Экспортировано в %1$s</string>
     <string name="export_failed">Ошибка экспорта: %1$s</string>
     <string name="share_export_title">Поделиться экспортом</string>
+    <string name="notification_start_blocked">Не удалось запустить сканирование в фоновом режиме. Нажмите, чтобы открыть NearScan и запустить вручную.</string>
+    <string name="permission_warning_title">Разрешение отклонено — %1$s ничего не найдёт, пока оно не будет предоставлено.</string>
+    <string name="permission_affects_wifi">Сканирование WiFi</string>
+    <string name="permission_affects_bluetooth">Сканирование Bluetooth</string>
+    <string name="permission_affects_cell">Сканирование сотовой сети</string>
+    <string name="open_settings">Открыть настройки</string>
+    <string name="wifi_min_rssi">Мин. RSSI: %1$d дБм</string>
+    <string name="wifi_bands">Диапазоны WiFi</string>
+    <string name="auto_export_off">Автоэкспорт: Выкл</string>
+    <string name="auto_export_every">Автоэкспорт: каждые %1$d мин</string>
 </resources>

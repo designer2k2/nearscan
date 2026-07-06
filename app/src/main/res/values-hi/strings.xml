@@ -38,4 +38,14 @@
     <string name="export_success">%1$s में निर्यात किया गया</string>
     <string name="export_failed">निर्यात विफल: %1$s</string>
     <string name="share_export_title">निर्यात साझा करें</string>
+    <string name="notification_start_blocked">पृष्ठभूमि में स्कैनिंग शुरू नहीं हो सकी। NearScan खोलने और मैन्युअल रूप से शुरू करने के लिए टैप करें।</string>
+    <string name="permission_warning_title">अनुमति अस्वीकृत — %1$s तब तक कुछ नहीं ढूंढेगा जब तक इसे अनुमति नहीं दी जाती।</string>
+    <string name="permission_affects_wifi">वाईफाई स्कैनिंग</string>
+    <string name="permission_affects_bluetooth">ब्लूटूथ स्कैनिंग</string>
+    <string name="permission_affects_cell">सेल स्कैनिंग</string>
+    <string name="open_settings">सेटिंग्स खोलें</string>
+    <string name="wifi_min_rssi">न्यूनतम RSSI: %1$d dBm</string>
+    <string name="wifi_bands">वाईफाई बैंड</string>
+    <string name="auto_export_off">ऑटो-एक्सपोर्ट: बंद</string>
+    <string name="auto_export_every">ऑटो-एक्सपोर्ट: हर %1$d मिनट</string>
 </resources>

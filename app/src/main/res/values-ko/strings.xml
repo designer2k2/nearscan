@@ -38,4 +38,14 @@
     <string name="export_success">%1$s(으)로 내보냈습니다</string>
     <string name="export_failed">내보내기 실패: %1$s</string>
     <string name="share_export_title">내보내기 공유</string>
+    <string name="notification_start_blocked">백그라운드에서 스캔을 시작할 수 없습니다. NearScan을 열어 수동으로 시작하려면 탭하세요.</string>
+    <string name="permission_warning_title">권한이 거부되었습니다 — 권한이 부여될 때까지 %1$s이(가) 아무것도 찾지 못합니다.</string>
+    <string name="permission_affects_wifi">WiFi 스캔</string>
+    <string name="permission_affects_bluetooth">블루투스 스캔</string>
+    <string name="permission_affects_cell">셀 스캔</string>
+    <string name="open_settings">설정 열기</string>
+    <string name="wifi_min_rssi">최소 RSSI: %1$d dBm</string>
+    <string name="wifi_bands">WiFi 대역</string>
+    <string name="auto_export_off">자동 내보내기: 꺼짐</string>
+    <string name="auto_export_every">자동 내보내기: %1$d분마다</string>
 </resources>

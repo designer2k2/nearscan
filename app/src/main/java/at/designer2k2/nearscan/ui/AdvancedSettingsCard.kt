@@ -15,6 +15,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -83,6 +84,14 @@ fun AdvancedSettingsCard(
                         onEnabledChange = { onSettingsChange(settings.copy(scanWifiEnabled = it)) },
                         onIntervalChange = { onSettingsChange(settings.copy(intervalWifiSec = it)) },
                     )
+                    WifiMinRssiRow(
+                        minRssi = settings.wifiMinRssi,
+                        onChange = { onSettingsChange(settings.copy(wifiMinRssi = it)) },
+                    )
+                    WifiBandsRow(
+                        selectedBands = settings.wifiBands,
+                        onBandsChange = { onSettingsChange(settings.copy(wifiBands = it)) },
+                    )
                     ScanTypeRow(
                         label = stringResource(R.string.scan_bt),
                         enabled = settings.scanBtEnabled,
@@ -111,6 +120,10 @@ fun AdvancedSettingsCard(
                     ExportFormatDropdown(
                         selected = settings.exportFormat,
                         onSelected = { onSettingsChange(settings.copy(exportFormat = it)) },
+                    )
+                    AutoExportRow(
+                        intervalMin = settings.autoExportIntervalMin,
+                        onChange = { onSettingsChange(settings.copy(autoExportIntervalMin = it)) },
                     )
 
                     Button(
@@ -198,6 +211,67 @@ private fun ScanTypeRow(
             onValueChange = { onIntervalChange(it.toInt()) },
             valueRange = 1f..maxIntervalSec.toFloat(),
             enabled = enabled,
+        )
+    }
+}
+
+@Composable
+private fun WifiMinRssiRow(
+    minRssi: Int,
+    onChange: (Int) -> Unit,
+) {
+    Column {
+        Text(text = stringResource(R.string.wifi_min_rssi, minRssi), fontWeight = FontWeight.Medium)
+        Slider(
+            value = minRssi.toFloat(),
+            onValueChange = { onChange(it.toInt()) },
+            valueRange = -100f..-30f,
+        )
+    }
+}
+
+@Composable
+private fun WifiBandsRow(
+    selectedBands: Set<String>,
+    onBandsChange: (Set<String>) -> Unit,
+) {
+    Column {
+        Text(text = stringResource(R.string.wifi_bands), fontWeight = FontWeight.Medium)
+        Row(
+            modifier = Modifier.padding(top = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            listOf("2.4", "5", "6").forEach { band ->
+                FilterChip(
+                    selected = band in selectedBands,
+                    onClick = {
+                        val updated = if (band in selectedBands) selectedBands - band else selectedBands + band
+                        // Never allow deselecting every band — that would silently drop all WiFi results.
+                        if (updated.isNotEmpty()) onBandsChange(updated)
+                    },
+                    label = { Text("$band GHz") },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AutoExportRow(
+    intervalMin: Int,
+    onChange: (Int) -> Unit,
+) {
+    Column {
+        val label = if (intervalMin <= 0) {
+            stringResource(R.string.auto_export_off)
+        } else {
+            stringResource(R.string.auto_export_every, intervalMin)
+        }
+        Text(text = label, fontWeight = FontWeight.Medium)
+        Slider(
+            value = intervalMin.toFloat(),
+            onValueChange = { onChange(it.toInt()) },
+            valueRange = 0f..120f,
         )
     }
 }

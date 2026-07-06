@@ -38,6 +38,7 @@
     <string name="notification_running">Scanning the RF environment</string>
     <string name="no_location_set">No location set</string>
     <string name="notification_counts">WiFi: %1$d  BT: %2$d  Cell: %3$d</string>
+    <string name="notification_start_blocked">Couldn\'t start scanning in the background. Tap to open NearScan and start manually.</string>
 
     <string name="gps_accuracy">Accuracy: %1$.0f m</string>
     <string name="location_invalid">Enter a valid latitude and longitude</string>
@@ -46,4 +47,15 @@
     <string name="export_success">Exported to %1$s</string>
     <string name="export_failed">Export failed: %1$s</string>
     <string name="share_export_title">Share export</string>
+
+    <string name="permission_warning_title">Permission denied — %1$s won\'t find anything until it\'s granted.</string>
+    <string name="permission_affects_wifi">WiFi scanning</string>
+    <string name="permission_affects_bluetooth">Bluetooth scanning</string>
+    <string name="permission_affects_cell">Cell scanning</string>
+    <string name="open_settings">Open Settings</string>
+
+    <string name="wifi_min_rssi">Min RSSI: %1$d dBm</string>
+    <string name="wifi_bands">WiFi bands</string>
+    <string name="auto_export_off">Auto-export: Off</string>
+    <string name="auto_export_every">Auto-export: every %1$d min</string>
 </resources>

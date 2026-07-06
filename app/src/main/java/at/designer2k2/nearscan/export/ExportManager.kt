@@ -32,6 +32,15 @@ class ExportManager @Inject constructor(
         }
     }
 
+    /**
+     * The user's configured output folder, or the app-specific external files dir (`.../NearScan`)
+     * if none was set. Shared by every export entry point (manual, Tasker `CMD_EXPORT`, and the
+     * auto-export scheduler) so they can't drift out of sync with each other.
+     */
+    fun resolveOutputDir(outputFolder: String): File =
+        if (outputFolder.isNotBlank()) File(outputFolder)
+        else File(context.getExternalFilesDir(null), "NearScan")
+
     /** Sum of all records across the three scan tables. */
     suspend fun totalRecordCount(): Long =
         wifiScanDao.count().first() + btScanDao.count().first() + cellScanDao.count().first()

@@ -13,11 +13,12 @@ interface WifiScanDao {
     @Query("SELECT COUNT(*) FROM wifi_scans")
     fun count(): Flow<Long>
 
-    @Query("SELECT * FROM wifi_scans ORDER BY timestamp ASC")
-    suspend fun getAll(): List<WifiScanEntity>
-
     @Query("SELECT * FROM wifi_scans ORDER BY timestamp ASC LIMIT :limit OFFSET :offset")
     suspend fun getPage(limit: Int, offset: Int): List<WifiScanEntity>
+
+    /** Most recent [limit] rows, newest first — for the ContentProvider's bounded live queries. */
+    @Query("SELECT * FROM wifi_scans ORDER BY timestamp DESC LIMIT :limit")
+    suspend fun getRecent(limit: Int): List<WifiScanEntity>
 
     @Query("DELETE FROM wifi_scans WHERE timestamp < :cutoff")
     suspend fun deleteOlderThan(cutoff: Long)
@@ -31,11 +32,12 @@ interface BtScanDao {
     @Query("SELECT COUNT(*) FROM bt_scans")
     fun count(): Flow<Long>
 
-    @Query("SELECT * FROM bt_scans ORDER BY timestamp ASC")
-    suspend fun getAll(): List<BtScanEntity>
-
     @Query("SELECT * FROM bt_scans ORDER BY timestamp ASC LIMIT :limit OFFSET :offset")
     suspend fun getPage(limit: Int, offset: Int): List<BtScanEntity>
+
+    /** Most recent [limit] rows, newest first — for the ContentProvider's bounded live queries. */
+    @Query("SELECT * FROM bt_scans ORDER BY timestamp DESC LIMIT :limit")
+    suspend fun getRecent(limit: Int): List<BtScanEntity>
 
     @Query("DELETE FROM bt_scans WHERE timestamp < :cutoff")
     suspend fun deleteOlderThan(cutoff: Long)
@@ -49,11 +51,12 @@ interface CellScanDao {
     @Query("SELECT COUNT(*) FROM cell_scans")
     fun count(): Flow<Long>
 
-    @Query("SELECT * FROM cell_scans ORDER BY timestamp ASC")
-    suspend fun getAll(): List<CellScanEntity>
-
     @Query("SELECT * FROM cell_scans ORDER BY timestamp ASC LIMIT :limit OFFSET :offset")
     suspend fun getPage(limit: Int, offset: Int): List<CellScanEntity>
+
+    /** Most recent [limit] rows, newest first — for the ContentProvider's bounded live queries. */
+    @Query("SELECT * FROM cell_scans ORDER BY timestamp DESC LIMIT :limit")
+    suspend fun getRecent(limit: Int): List<CellScanEntity>
 
     @Query("DELETE FROM cell_scans WHERE timestamp < :cutoff")
     suspend fun deleteOlderThan(cutoff: Long)

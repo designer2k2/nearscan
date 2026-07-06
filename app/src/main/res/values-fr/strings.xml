@@ -38,4 +38,14 @@
     <string name="export_success">Exporté vers %1$s</string>
     <string name="export_failed">\u00c9chec de l\'exportation : %1$s</string>
     <string name="share_export_title">Partager l\'export</string>
+    <string name="notification_start_blocked">Impossible de démarrer l\'analyse en arrière-plan. Appuyez pour ouvrir NearScan et démarrer manuellement.</string>
+    <string name="permission_warning_title">Autorisation refusée — %1$s ne trouvera rien tant qu\'elle n\'est pas accordée.</string>
+    <string name="permission_affects_wifi">Analyse WiFi</string>
+    <string name="permission_affects_bluetooth">Analyse Bluetooth</string>
+    <string name="permission_affects_cell">Analyse cellulaire</string>
+    <string name="open_settings">Ouvrir les paramètres</string>
+    <string name="wifi_min_rssi">RSSI min. : %1$d dBm</string>
+    <string name="wifi_bands">Bandes WiFi</string>
+    <string name="auto_export_off">Export auto : désactivé</string>
+    <string name="auto_export_every">Export auto : toutes les %1$d min</string>
 </resources>

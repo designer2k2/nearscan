@@ -29,6 +29,10 @@ import kotlinx.coroutines.runBlocking
  *   content://.../cell   — Cell records, newest first
  *   content://.../stats  — Single-row session summary
  *
+ * wifi/bt/cell accept an optional `?limit=` query parameter (default [DEFAULT_ROW_LIMIT], capped
+ * at [MAX_ROW_LIMIT]) so a long-running multi-day session can't force a full-table load into
+ * memory on every Tasker Content Query — only the most recent rows are read from the DB.
+ *
  * Requires caller to hold at.designer2k2.nearscan.permission.READ_DATA (normal protection level).
  *
  * Note: query() is called on a Binder thread (not the main thread), so runBlocking is safe here.
@@ -59,15 +63,18 @@ class NearScanContentProvider : ContentProvider() {
         selectionArgs: Array<out String>?,
         sortOrder: String?,
     ): Cursor? = when (MATCHER.match(uri)) {
-        CODE_WIFI -> buildWifiCursor()
-        CODE_BT -> buildBtCursor()
-        CODE_CELL -> buildCellCursor()
+        CODE_WIFI -> buildWifiCursor(rowLimit(uri))
+        CODE_BT -> buildBtCursor(rowLimit(uri))
+        CODE_CELL -> buildCellCursor(rowLimit(uri))
         CODE_STATS -> buildStatsCursor()
         else -> null
     }
 
-    private fun buildWifiCursor(): MatrixCursor = runBlocking {
-        val rows = deps.wifiScanDao().getAll().reversed()
+    private fun rowLimit(uri: Uri): Int =
+        (uri.getQueryParameter("limit")?.toIntOrNull() ?: DEFAULT_ROW_LIMIT).coerceIn(1, MAX_ROW_LIMIT)
+
+    private fun buildWifiCursor(limit: Int): MatrixCursor = runBlocking {
+        val rows = deps.wifiScanDao().getRecent(limit)
         MatrixCursor(COLS_WIFI).apply {
             rows.forEach { r ->
                 addRow(arrayOf(r.bssid, r.ssid, r.rssi, r.channel, r.latitude, r.longitude, r.timestamp))
@@ -75,8 +82,8 @@ class NearScanContentProvider : ContentProvider() {
         }
     }
 
-    private fun buildBtCursor(): MatrixCursor = runBlocking {
-        val rows = deps.btScanDao().getAll().reversed()
+    private fun buildBtCursor(limit: Int): MatrixCursor = runBlocking {
+        val rows = deps.btScanDao().getRecent(limit)
         MatrixCursor(COLS_BT).apply {
             rows.forEach { r ->
                 addRow(arrayOf(r.address, r.name, r.rssi, r.latitude, r.longitude, r.timestamp))
@@ -84,8 +91,8 @@ class NearScanContentProvider : ContentProvider() {
         }
     }
 
-    private fun buildCellCursor(): MatrixCursor = runBlocking {
-        val rows = deps.cellScanDao().getAll().reversed()
+    private fun buildCellCursor(limit: Int): MatrixCursor = runBlocking {
+        val rows = deps.cellScanDao().getRecent(limit)
         MatrixCursor(COLS_CELL).apply {
             rows.forEach { r ->
                 addRow(arrayOf(r.mcc, r.mnc, r.cid, r.rssi, r.technology, r.latitude, r.longitude, r.timestamp))
@@ -124,6 +131,9 @@ class NearScanContentProvider : ContentProvider() {
         private const val CODE_BT = 2
         private const val CODE_CELL = 3
         private const val CODE_STATS = 4
+
+        private const val DEFAULT_ROW_LIMIT = 500
+        private const val MAX_ROW_LIMIT = 5_000
 
         private val MATCHER = UriMatcher(UriMatcher.NO_MATCH).apply {
             addURI(AUTHORITY, "wifi", CODE_WIFI)

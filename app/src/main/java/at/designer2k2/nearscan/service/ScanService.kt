@@ -3,17 +3,20 @@ package at.designer2k2.nearscan.service
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import at.designer2k2.nearscan.R
 import at.designer2k2.nearscan.db.BtScanDao
 import at.designer2k2.nearscan.db.CellScanDao
 import at.designer2k2.nearscan.db.WifiScanDao
+import at.designer2k2.nearscan.export.ExportManager
 import at.designer2k2.nearscan.extra.ExtraFields
 import at.designer2k2.nearscan.extra.ExtraFieldsCollector
 import at.designer2k2.nearscan.ipc.TaskerBroadcaster
@@ -68,6 +71,7 @@ class ScanService : Service() {
     @Inject lateinit var mqttPublisher: MqttPublisher
     @Inject lateinit var extraFieldsCollector: ExtraFieldsCollector
     @Inject lateinit var taskerBroadcaster: TaskerBroadcaster
+    @Inject lateinit var exportManager: ExportManager
 
     private val scope = CoroutineScope(SupervisorJob())
     private val jobs = mutableListOf<Job>()
@@ -143,7 +147,9 @@ class ScanService : Service() {
                 enabledSelector = { it.scanWifiEnabled },
                 intervalSelector = { it.intervalWifiSec },
             ) {
-                val rows = wifiScanner.scan()
+                val rows = wifiScanner.scan().filter {
+                    it.rssi >= currentSettings.wifiMinRssi && (it.band == null || it.band in currentSettings.wifiBands)
+                }
                 val stamped = rows.map {
                     it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
                 }
@@ -221,6 +227,21 @@ class ScanService : Service() {
                 taskerBroadcaster.onNewCell(stamped)
                 val s = status.value
                 taskerBroadcaster.onRoundComplete(s.wifiCount, s.btCount, s.cellCount)
+            }
+
+            // Auto-export reuses the same enabled/interval supervision pattern as the scan
+            // types: autoExportIntervalMin > 0 enables it, and changing the interval mid-session
+            // cancels/relaunches the loop like any other supervised type (minutes -> seconds for
+            // the shared loop() helper).
+            jobs += superviseScanType(
+                enabledSelector = { it.autoExportIntervalMin > 0 },
+                intervalSelector = { it.autoExportIntervalMin * 60 },
+            ) {
+                val settings = currentSettings
+                val outputDir = exportManager.resolveOutputDir(settings.outputFolder)
+                val file = exportManager.export(settings.exportFormat, outputDir)
+                val count = exportManager.totalRecordCount()
+                taskerBroadcaster.onExportComplete(file, settings.exportFormat.key, count)
             }
         }
     }
@@ -344,6 +365,7 @@ class ScanService : Service() {
     companion object {
         private const val CHANNEL_ID = "nearscan_scanning"
         private const val NOTIFICATION_ID = 1001
+        private const val NOTIFICATION_ID_BLOCKED = 1002
         private const val RETENTION_DAYS = 30L
         private const val MS_PER_DAY = 24L * 60 * 60 * 1000
         const val ACTION_STOP = "at.designer2k2.nearscan.action.STOP"
@@ -353,12 +375,49 @@ class ScanService : Service() {
 
         fun start(context: Context) {
             val intent = Intent(context, ScanService::class.java)
-            context.startForegroundService(intent)
+            try {
+                context.startForegroundService(intent)
+            } catch (e: IllegalStateException) {
+                // Android 12+ blocks starting a foreground service from the background (e.g. a
+                // Tasker CMD_START firing while NearScan isn't in the foreground) by throwing
+                // ForegroundServiceStartNotAllowedException, a subclass of IllegalStateException
+                // only present on API 31+. Catching the (always-available) parent type keeps this
+                // safe to compile/run down to minSdk 26. Surface it instead of crashing the caller.
+                Log.w("ScanService", "startForegroundService blocked by background restriction", e)
+                notifyStartBlocked(context)
+            }
         }
 
         fun stop(context: Context) {
             val intent = Intent(context, ScanService::class.java).apply { action = ACTION_STOP }
             context.startService(intent)
+        }
+
+        private fun notifyStartBlocked(context: Context) {
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    CHANNEL_ID,
+                    context.getString(R.string.notification_channel_name),
+                    NotificationManager.IMPORTANCE_LOW,
+                )
+                nm.createNotificationChannel(channel)
+            }
+            val openAppIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                openAppIntent,
+                PendingIntent.FLAG_IMMUTABLE,
+            )
+            val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+                .setContentTitle(context.getString(R.string.notification_title))
+                .setContentText(context.getString(R.string.notification_start_blocked))
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .build()
+            nm.notify(NOTIFICATION_ID_BLOCKED, notification)
         }
     }
 }

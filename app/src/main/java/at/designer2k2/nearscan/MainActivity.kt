@@ -24,6 +24,7 @@ import at.designer2k2.nearscan.prefs.SettingsDataStore
 import at.designer2k2.nearscan.ui.MainScreen
 import at.designer2k2.nearscan.ui.MainViewModel
 import at.designer2k2.nearscan.ui.theme.NearScanTheme
+import at.designer2k2.nearscan.util.RequiredPermissions
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -68,15 +69,10 @@ class MainActivity : ComponentActivity() {
 
     private fun requestRequiredPermissions() {
         val required = buildList {
-            add(Manifest.permission.ACCESS_FINE_LOCATION)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                add(Manifest.permission.BLUETOOTH_SCAN)
-                add(Manifest.permission.BLUETOOTH_CONNECT)
-            }
+            addAll(RequiredPermissions.forScanning())
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 add(Manifest.permission.POST_NOTIFICATIONS)
             }
-            add(Manifest.permission.READ_PHONE_STATE)
         }
         val toRequest = required.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED

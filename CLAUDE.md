@@ -155,6 +155,14 @@ They do NOT appear in WiGLE CSV export (fixed schema).
   Settings. Shows a small `CircularProgressIndicator` in place of the icon while `isExporting`.
   Uses whichever export format is currently selected in Advanced Settings; the format dropdown
   and a second **Export Now** button remain there too for users who want to pick a format first.
+- **Missing-permission banner** ✅ implemented — an `errorContainer`-styled card appears above the
+  location row (pushing everything else down, not overlaid) whenever any of
+  `util/RequiredPermissions.forScanning()` (`ACCESS_FINE_LOCATION`, `BLUETOOTH_SCAN`/`_CONNECT` on
+  API 31+, `READ_PHONE_STATE`) is denied — re-checked on every `Lifecycle.Event.ON_RESUME` so
+  returning from the system permission dialog or Settings updates it live. Names exactly which
+  scan types are affected and has an "Open Settings" button
+  (`ACTION_APPLICATION_DETAILS_SETTINGS`). Fixes a prior gap where denying a permission left the
+  counters silently frozen at 0 forever with no explanation.
 
 ### Set Location Dialog
 - Lat / Lon / Altitude text fields (decimal degrees)
@@ -192,13 +200,23 @@ Cell towers change slowly enough to keep a 300s ceiling.
   enabling mid-session actually connects instead of silently no-op'ing
 - Keep screen on while running: [ ] toggle ✅ implemented
 - Deduplicate: [ ] toggle ✅ implemented in UI **and** in `ScanService` (see Deduplication below)
+- **WiFi min RSSI** ✅ implemented — slider (-100 to -30 dBm), enforced in `ScanService`'s WiFi
+  supervision block (`it.rssi >= currentSettings.wifiMinRssi`). Previously the `wifiMinRssi`
+  DataStore key was persisted but never read anywhere — a code-review finding fixed together with
+  the UI so the setting isn't reachable only via direct DataStore manipulation.
+- **WiFi bands** ✅ implemented — 2.4/5/6 GHz `FilterChip`s, enforced alongside the RSSI filter
+  (`it.band in currentSettings.wifiBands`). The UI refuses to let you deselect the last remaining
+  band, since an empty set would silently drop every WiFi result.
+- **Auto-export interval** ✅ implemented — slider (0-120 min, 0 = off), supervised the same
+  reactive way as the scan-type intervals (`ScanService`'s `superviseScanType`, minutes converted
+  to seconds for the shared `loop()` helper). Uses `ExportManager.resolveOutputDir()` /
+  `exportFormat` from current settings and fires a `TaskerBroadcaster.onExportComplete` on success,
+  same as `CMD_EXPORT`.
 
 **Not yet in UI (settings exist in DataStore, UI controls not yet built):**
-- WiFi band filter (2.4 / 5 / 6 GHz) — `wifiBands` key persisted
-- WiFi min RSSI threshold — `wifiMinRssi` key persisted
 - BT device class filter
-- Output folder picker — `outputFolder` key persisted
-- Auto-export interval — `autoExportIntervalMin` key persisted
+- Output folder picker — `outputFolder` key persisted (settable via Tasker `CMD_EXPORT`'s
+  implicit use of it, or direct DataStore manipulation, but no in-app text field yet)
 - Extra Logged Fields checkboxes (battery, screen, network, sensors, memory) — all 11 keys persisted, `ExtraFieldsCollector` fully implemented; just no UI controls yet
 
 ---
@@ -615,10 +633,22 @@ Tasker task action: **Action › Send Intent**. Set **Package** = `at.designer2k
 | `at.designer2k2.nearscan.CMD_STOP` | — | Stop scanning |
 | `at.designer2k2.nearscan.CMD_TOGGLE` | — | Toggle scanning on/off |
 | `at.designer2k2.nearscan.CMD_EXPORT` | `format` (String, optional) | Trigger export; format overrides current setting if provided |
-| `at.designer2k2.nearscan.CMD_SET_LOCATION` | `lat` (double), `lon` (double), `alt` (double) | Update static coordinates (persisted to DataStore) |
-| `at.designer2k2.nearscan.CMD_SET_INTERVAL` | `type` (String: wifi/bt/ble/cell), `interval_sec` (int) | Change a scan interval at runtime |
+| `at.designer2k2.nearscan.CMD_SET_LOCATION` | `lat`, `lon`, `alt` | Update static coordinates (persisted to DataStore) |
+| `at.designer2k2.nearscan.CMD_SET_INTERVAL` | `type` (String: wifi/bt/ble/cell), `interval_sec` | Change a scan interval at runtime |
 
 **Implementation:** `ipc/CommandReceiver.kt` — `BroadcastReceiver`, delegates to `ScanService.start()` / `stop()` for scan control, or a `goAsync()` + `Dispatchers.IO` coroutine calling `SettingsDataStore` for settings mutations (`CMD_SET_LOCATION`, `CMD_SET_INTERVAL`) and `ExportManager` (`CMD_EXPORT`).
+
+- **`lat`/`lon`/`alt`/`interval_sec` accept either a numeric or String extra.** Tasker's Send
+  Intent action sends extras as plain strings by default (e.g. `lat:%LOCN`) — reading them with
+  `Intent.getDoubleExtra`/`getIntExtra` alone silently returns the type's default (`0.0`/`-1`)
+  instead of the real value, since those getters do a type-check and don't parse strings. Both
+  handlers try `getStringExtra(...).toDoubleOrNull()`/`toIntOrNull()` first and fall back to the
+  typed getter, so both a string extra and a genuinely-typed numeric extra work.
+- **`CMD_START` can hit Android 12+'s background foreground-service-start restriction** if
+  Tasker fires it while NearScan isn't in the foreground (e.g. the scheduled-session recipe
+  below). `ScanService.start()` catches the resulting `IllegalStateException` and posts a
+  notification ("Couldn't start scanning in the background — tap to open NearScan") instead of
+  crashing the caller. There's no way to auto-recover the start from inside a `BroadcastReceiver`.
 
 **Manifest:**
 ```xml
@@ -651,9 +681,9 @@ Read-only `ContentProvider` for Tasker's **Content Query** action or any app usi
 | `.../cell` | `mcc`, `mnc`, `cid`, `rssi`, `tech`, `lat`, `lon`, `timestamp` | Cell records, newest first |
 | `.../stats` | `is_running` (0/1), `wifi_total`, `bt_total`, `cell_total`, `duration_s`, `lat`, `lon` | Single-row live session summary |
 
-**Note:** `selection` / `selectionArgs` are accepted but **not filtered** — the full table is always returned (v1). Filter results in Tasker variables if needed.
+**Note:** `selection` / `selectionArgs` are accepted but **not filtered**. `wifi`/`bt`/`cell` return the most recent rows, newest first, bounded by an optional `?limit=` URI query parameter (default 500, capped at 5000) — e.g. `content://at.designer2k2.nearscan.provider/wifi?limit=50`. This replaced an earlier version that loaded and reversed the *entire* table on every query, which didn't scale for multi-day sessions.
 
-**Implementation:** `ipc/NearScanContentProvider.kt` — uses Hilt `@EntryPoint` pattern (ContentProvider cannot use `@AndroidEntryPoint`); wraps Room DAO queries via `runBlocking` (Binder thread — safe, does not ANR). Returns a `MatrixCursor` built from entity lists.
+**Implementation:** `ipc/NearScanContentProvider.kt` — uses Hilt `@EntryPoint` pattern (ContentProvider cannot use `@AndroidEntryPoint`); wraps Room DAO queries via `runBlocking` (Binder thread — safe, does not ANR). `wifi`/`bt`/`cell` use `getRecent(limit)` (`ORDER BY timestamp DESC LIMIT :limit` at the SQL level, not loaded-then-reversed in Kotlin). Returns a `MatrixCursor` built from entity lists.
 
 **Manifest:**
 ```xml

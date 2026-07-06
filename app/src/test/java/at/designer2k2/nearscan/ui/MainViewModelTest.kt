@@ -54,10 +54,9 @@ class MainViewModelTest {
         every { btScanDao.count() } returns flowOf(0L)
         every { cellScanDao.count() } returns flowOf(0L)
         every { application.applicationContext } returns application
-        // Relaxed mockk auto-mocks File (bypassing its constructor, leaving internal fields
-        // null) unless stubbed explicitly, which crashes the real File(File, String) resolve
-        // path. Return a properly-constructed File so exportNow()'s fallback dir works.
-        every { application.getExternalFilesDir(null) } returns java.io.File("/tmp/nearscan-test-files")
+        // exportManager is a non-relaxed mock, so resolveOutputDir (a non-nullable return type)
+        // must be stubbed or MockK throws on the unstubbed call inside exportNow().
+        every { exportManager.resolveOutputDir(any()) } returns java.io.File("/tmp/nearscan-test-files")
     }
 
     @After

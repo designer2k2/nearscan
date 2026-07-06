@@ -1,6 +1,10 @@
 package at.designer2k2.nearscan.ui
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings as AndroidSettings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -26,9 +31,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,10 +49,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import at.designer2k2.nearscan.R
+import at.designer2k2.nearscan.util.RequiredPermissions
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -61,6 +73,20 @@ fun MainScreen(
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    var missingPermissions by remember { mutableStateOf(emptyList<String>()) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                missingPermissions = RequiredPermissions.forScanning().filter {
+                    ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     LaunchedEffect(state.exportResult) {
         state.exportResult?.let { result ->
@@ -140,6 +166,20 @@ fun MainScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            if (missingPermissions.isNotEmpty()) {
+                MissingPermissionsBanner(
+                    missing = missingPermissions,
+                    onOpenSettings = {
+                        context.startActivity(
+                            Intent(
+                                AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.fromParts("package", context.packageName, null),
+                            ),
+                        )
+                    },
+                )
+            }
+
             LocationRow(
                 latitude = state.latitude,
                 longitude = state.longitude,
@@ -204,6 +244,48 @@ fun MainScreen(
             },
             onDismiss = { showLocationDialog = false },
         )
+    }
+}
+
+@Composable
+private fun MissingPermissionsBanner(
+    missing: List<String>,
+    onOpenSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val affected = buildList {
+        if (Manifest.permission.ACCESS_FINE_LOCATION in missing) {
+            add(stringResource(R.string.permission_affects_wifi))
+        }
+        if (Manifest.permission.BLUETOOTH_SCAN in missing || Manifest.permission.BLUETOOTH_CONNECT in missing) {
+            add(stringResource(R.string.permission_affects_bluetooth))
+        }
+        if (Manifest.permission.READ_PHONE_STATE in missing) {
+            add(stringResource(R.string.permission_affects_cell))
+        }
+    }
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                )
+                Text(
+                    text = stringResource(R.string.permission_warning_title, affected.joinToString(", ")),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+            TextButton(onClick = onOpenSettings) {
+                Text(stringResource(R.string.open_settings))
+            }
+        }
     }
 }
 

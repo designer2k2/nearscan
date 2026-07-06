@@ -38,4 +38,14 @@
     <string name="export_success">Exportado a %1$s</string>
     <string name="export_failed">Error al exportar: %1$s</string>
     <string name="share_export_title">Compartir exportación</string>
+    <string name="notification_start_blocked">No se pudo iniciar el escaneo en segundo plano. Toca para abrir NearScan e iniciar manualmente.</string>
+    <string name="permission_warning_title">Permiso denegado — %1$s no encontrará nada hasta que se conceda.</string>
+    <string name="permission_affects_wifi">Escaneo de WiFi</string>
+    <string name="permission_affects_bluetooth">Escaneo de Bluetooth</string>
+    <string name="permission_affects_cell">Escaneo de red móvil</string>
+    <string name="open_settings">Abrir Ajustes</string>
+    <string name="wifi_min_rssi">RSSI mín.: %1$d dBm</string>
+    <string name="wifi_bands">Bandas WiFi</string>
+    <string name="auto_export_off">Exportación automática: Desactivada</string>
+    <string name="auto_export_every">Exportación automática: cada %1$d min</string>
 </resources>

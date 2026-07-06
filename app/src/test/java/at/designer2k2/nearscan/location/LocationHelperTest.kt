@@ -58,6 +58,29 @@ class LocationHelperTest {
     @Test
     fun `getSingleFix returns last known location immediately when available`() = runTest {
         grantLocationPermission(granted = true)
+        every { locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) } returns true
+        every { locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) } returns false
+        val lastKnown: Location = mockk()
+        every { locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) } returns lastKnown
+        val result = helper.getSingleFix(context)
+        assertSame(lastKnown, result)
+    }
+
+    @Test
+    fun `getSingleFix prefers network provider over GPS provider`() = runTest {
+        grantLocationPermission(granted = true)
+        every { locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) } returns true
+        every { locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) } returns true
+        val lastKnown: Location = mockk()
+        every { locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) } returns lastKnown
+        helper.getSingleFix(context)
+        io.mockk.verify { locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) }
+    }
+
+    @Test
+    fun `getSingleFix falls back to GPS provider when network is disabled`() = runTest {
+        grantLocationPermission(granted = true)
+        every { locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) } returns false
         every { locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) } returns true
         val lastKnown: Location = mockk()
         every { locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) } returns lastKnown
@@ -66,23 +89,13 @@ class LocationHelperTest {
     }
 
     @Test
-    fun `getSingleFix prefers GPS provider over network provider`() = runTest {
+    fun `getSingleFix falls back to GPS last-known when network has no cached fix`() = runTest {
         grantLocationPermission(granted = true)
-        every { locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) } returns true
         every { locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) } returns true
+        every { locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) } returns true
+        every { locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) } returns null
         val lastKnown: Location = mockk()
         every { locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) } returns lastKnown
-        helper.getSingleFix(context)
-        io.mockk.verify { locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) }
-    }
-
-    @Test
-    fun `getSingleFix falls back to network provider when GPS is disabled`() = runTest {
-        grantLocationPermission(granted = true)
-        every { locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) } returns false
-        every { locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) } returns true
-        val lastKnown: Location = mockk()
-        every { locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) } returns lastKnown
         val result = helper.getSingleFix(context)
         assertSame(lastKnown, result)
     }

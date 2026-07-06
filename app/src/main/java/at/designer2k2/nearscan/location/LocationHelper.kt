@@ -14,8 +14,12 @@ import javax.inject.Singleton
 import kotlin.coroutines.resume
 
 /**
- * Acquires a single GPS fix then immediately stops listening — the whole point of NearScan
- * is that the GPS radio does NOT stay on during scanning.
+ * Acquires a single location fix then immediately stops listening — the whole point of NearScan
+ * is that the GPS radio does NOT stay on during scanning. This is only used to prefill the
+ * "Set Location" dialog with the user's current position, so a fast, rough network-based fix
+ * is preferred over GPS: GPS can take 30+ seconds for a cold fix (especially indoors), while
+ * network location (cell/WiFi-based) resolves almost instantly and is accurate enough for
+ * a manually-set base location.
  */
 @Singleton
 class LocationHelper @Inject constructor() {
@@ -46,25 +50,26 @@ class LocationHelper @Inject constructor() {
                 override fun onProviderEnabled(provider: String) {}
             }
 
-            val provider = when {
-                lm.isProviderEnabled(LocationManager.GPS_PROVIDER) -> LocationManager.GPS_PROVIDER
-                lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
-                else -> null
-            }
+            // Network first: much faster than GPS, and plenty accurate for a manually-set location.
+            val providers = listOfNotNull(
+                LocationManager.NETWORK_PROVIDER.takeIf { lm.isProviderEnabled(it) },
+                LocationManager.GPS_PROVIDER.takeIf { lm.isProviderEnabled(it) },
+            )
 
-            if (provider == null) {
+            if (providers.isEmpty()) {
                 cont.resume(null)
                 return@suspendCancellableCoroutine
             }
 
-            // Return last known immediately if available; otherwise wait for one update.
-            val lastKnown = lm.getLastKnownLocation(provider)
+            // Return any cached last-known fix immediately; otherwise wait for one live update
+            // from the fastest available provider.
+            val lastKnown = providers.firstNotNullOfOrNull { lm.getLastKnownLocation(it) }
             if (lastKnown != null) {
                 cont.resume(lastKnown)
                 return@suspendCancellableCoroutine
             }
 
-            lm.requestSingleUpdate(provider, listener, Looper.getMainLooper())
+            lm.requestSingleUpdate(providers.first(), listener, Looper.getMainLooper())
             cont.invokeOnCancellation { lm.removeUpdates(listener) }
         }
     }

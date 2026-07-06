@@ -37,6 +37,10 @@ import at.designer2k2.nearscan.R
 import at.designer2k2.nearscan.prefs.ExportFormat
 import at.designer2k2.nearscan.prefs.NearScanSettings
 
+/** Wireless radios (WiFi/BT/BLE) rescan often enough that a 300s interval is pointless; cell towers change slowly. */
+private const val WIRELESS_MAX_INTERVAL_SEC = 60
+private const val CELL_MAX_INTERVAL_SEC = 300
+
 @Composable
 fun AdvancedSettingsCard(
     settings: NearScanSettings,
@@ -75,6 +79,7 @@ fun AdvancedSettingsCard(
                         label = stringResource(R.string.scan_wifi),
                         enabled = settings.scanWifiEnabled,
                         intervalSec = settings.intervalWifiSec,
+                        maxIntervalSec = WIRELESS_MAX_INTERVAL_SEC,
                         onEnabledChange = { onSettingsChange(settings.copy(scanWifiEnabled = it)) },
                         onIntervalChange = { onSettingsChange(settings.copy(intervalWifiSec = it)) },
                     )
@@ -82,6 +87,7 @@ fun AdvancedSettingsCard(
                         label = stringResource(R.string.scan_bt),
                         enabled = settings.scanBtEnabled,
                         intervalSec = settings.intervalBtSec,
+                        maxIntervalSec = WIRELESS_MAX_INTERVAL_SEC,
                         onEnabledChange = { onSettingsChange(settings.copy(scanBtEnabled = it)) },
                         onIntervalChange = { onSettingsChange(settings.copy(intervalBtSec = it)) },
                     )
@@ -89,6 +95,7 @@ fun AdvancedSettingsCard(
                         label = stringResource(R.string.scan_ble),
                         enabled = settings.scanBleEnabled,
                         intervalSec = settings.intervalBleSec,
+                        maxIntervalSec = WIRELESS_MAX_INTERVAL_SEC,
                         onEnabledChange = { onSettingsChange(settings.copy(scanBleEnabled = it)) },
                         onIntervalChange = { onSettingsChange(settings.copy(intervalBleSec = it)) },
                     )
@@ -96,6 +103,7 @@ fun AdvancedSettingsCard(
                         label = stringResource(R.string.scan_cell),
                         enabled = settings.scanCellEnabled,
                         intervalSec = settings.intervalCellSec,
+                        maxIntervalSec = CELL_MAX_INTERVAL_SEC,
                         onEnabledChange = { onSettingsChange(settings.copy(scanCellEnabled = it)) },
                         onIntervalChange = { onSettingsChange(settings.copy(intervalCellSec = it)) },
                     )
@@ -165,6 +173,7 @@ private fun ScanTypeRow(
     label: String,
     enabled: Boolean,
     intervalSec: Int,
+    maxIntervalSec: Int,
     onEnabledChange: (Boolean) -> Unit,
     onIntervalChange: (Int) -> Unit,
 ) {
@@ -187,7 +196,7 @@ private fun ScanTypeRow(
         Slider(
             value = intervalSec.toFloat(),
             onValueChange = { onIntervalChange(it.toInt()) },
-            valueRange = 1f..300f,
+            valueRange = 1f..maxIntervalSec.toFloat(),
             enabled = enabled,
         )
     }

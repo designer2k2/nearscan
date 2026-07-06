@@ -1,11 +1,11 @@
 package at.designer2k2.nearscan.prefs
 
 /** Export format options, persisted as the string in [ExportFormat.key]. */
-enum class ExportFormat(val key: String, val label: String) {
-    WIGLE_CSV("wigle_csv", "WiGLE CSV"),
-    CUSTOM_CSV("custom_csv", "Custom CSV"),
-    GEOJSON("geojson", "GeoJSON"),
-    SQLITE("sqlite", "SQLite dump");
+enum class ExportFormat(val key: String, val label: String, val mimeType: String) {
+    WIGLE_CSV("wigle_csv", "WiGLE CSV", "text/csv"),
+    CUSTOM_CSV("custom_csv", "Custom CSV", "text/csv"),
+    GEOJSON("geojson", "GeoJSON", "application/geo+json"),
+    SQLITE("sqlite", "SQLite dump", "application/vnd.sqlite3");
 
     companion object {
         fun fromKey(key: String?): ExportFormat =

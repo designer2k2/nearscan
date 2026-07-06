@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Declares which on-device paths the share-sheet FileProvider may expose as content:// URIs.
+    Covers the default export location (app-specific external files dir) plus broader external
+    storage and internal-files fallbacks, since the "Output folder" setting lets the user type
+    an arbitrary path.
+-->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <external-files-path name="external_files" path="." />
+    <external-path name="external_storage" path="." />
+    <files-path name="internal_files" path="." />
+    <cache-path name="cache" path="." />
+</paths>

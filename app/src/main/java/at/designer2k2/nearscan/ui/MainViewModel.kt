@@ -23,8 +23,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** Result of a manual export, shown once as a Snackbar then cleared. */
-data class ExportResult(val success: Boolean, val message: String)
+/** Result of a manual export, shown once (Snackbar on failure, share sheet on success) then cleared. */
+data class ExportResult(
+    val success: Boolean,
+    val message: String,
+    val filePath: String? = null,
+    val mimeType: String? = null,
+)
 
 data class MainUiState(
     val isRunning: Boolean = false,
@@ -182,7 +187,14 @@ class MainViewModel @Inject constructor(
                 it.copy(
                     isExporting = false,
                     exportResult = result.fold(
-                        onSuccess = { file -> ExportResult(success = true, message = file.name) },
+                        onSuccess = { file ->
+                            ExportResult(
+                                success = true,
+                                message = file.name,
+                                filePath = file.absolutePath,
+                                mimeType = settings.exportFormat.mimeType,
+                            )
+                        },
                         onFailure = { e -> ExportResult(success = false, message = e.message ?: "") },
                     ),
                 )

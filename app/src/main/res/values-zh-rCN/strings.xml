@@ -37,4 +37,5 @@
     <string name="export_now">立即导出</string>
     <string name="export_success">已导出至 %1$s</string>
     <string name="export_failed">导出失败：%1$s</string>
+    <string name="share_export_title">分享导出</string>
 </resources>

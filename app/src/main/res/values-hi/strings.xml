@@ -37,4 +37,5 @@
     <string name="export_now">अभी निर्यात करें</string>
     <string name="export_success">%1$s में निर्यात किया गया</string>
     <string name="export_failed">निर्यात विफल: %1$s</string>
+    <string name="share_export_title">निर्यात साझा करें</string>
 </resources>

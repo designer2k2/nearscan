@@ -37,4 +37,5 @@
     <string name="export_now">Exporter maintenant</string>
     <string name="export_success">Exporté vers %1$s</string>
     <string name="export_failed">\u00c9chec de l\'exportation : %1$s</string>
+    <string name="share_export_title">Partager l\'export</string>
 </resources>

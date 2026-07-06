@@ -102,6 +102,17 @@
             android:exported="true"
             android:readPermission="at.designer2k2.nearscan.permission.READ_DATA" />
 
+        <!-- Grants the share-sheet target temporary read access to exported files -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="at.designer2k2.nearscan.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
 
 </manifest>

@@ -45,4 +45,5 @@
     <string name="export_now">Export Now</string>
     <string name="export_success">Exported to %1$s</string>
     <string name="export_failed">Export failed: %1$s</string>
+    <string name="share_export_title">Share export</string>
 </resources>

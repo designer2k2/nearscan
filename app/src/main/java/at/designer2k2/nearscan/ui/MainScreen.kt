@@ -1,5 +1,6 @@
 package at.designer2k2.nearscan.ui
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,10 +40,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import at.designer2k2.nearscan.R
 import kotlinx.coroutines.launch
+import java.io.File
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -59,12 +62,29 @@ fun MainScreen(
 
     LaunchedEffect(state.exportResult) {
         state.exportResult?.let { result ->
-            val text = if (result.success) {
-                context.getString(R.string.export_success, result.message)
-            } else {
-                context.getString(R.string.export_failed, result.message)
+            val shared = result.success && result.filePath != null && runCatching {
+                val uri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    File(result.filePath),
+                )
+                val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = result.mimeType ?: "application/octet-stream"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(
+                    Intent.createChooser(sendIntent, context.getString(R.string.share_export_title)),
+                )
+            }.isSuccess
+            if (!shared) {
+                val text = if (result.success) {
+                    context.getString(R.string.export_success, result.message)
+                } else {
+                    context.getString(R.string.export_failed, result.message)
+                }
+                snackbarHostState.showSnackbar(text)
             }
-            snackbarHostState.showSnackbar(text)
             viewModel.consumeExportResult()
         }
     }

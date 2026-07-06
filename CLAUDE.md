@@ -164,17 +164,25 @@ They do NOT appear in WiGLE CSV export (fixed schema).
 
 **Scan Types & Intervals**
 ```
-[ ✓ ] WiFi           [──●────────] 10s
-[ ✓ ] BT Classic     [────●──────] 30s
-[ ✓ ] BT LE          [───●───────] 15s
-[ ✓ ] Cell Towers    [───────●───] 60s
+[ ✓ ] WiFi           [──●────────] 10s   (1-60s)
+[ ✓ ] BT Classic     [────●──────] 30s   (1-60s)
+[ ✓ ] BT LE          [───●───────] 15s   (1-60s)
+[ ✓ ] Cell Towers    [───────●───] 60s   (1-300s)
 ```
+WiFi/BT/BLE sliders cap at 60s — long wireless-scan intervals have little value and waste battery.
+Cell towers change slowly enough to keep a 300s ceiling.
 
 **Output**
 - Export format: `[WiGLE CSV ▼]` (WiGLE CSV / Custom CSV / GeoJSON / SQLite dump) ✅ implemented
 - **Export Now** button ✅ implemented — triggers `MainViewModel.exportNow()` directly (no Tasker
-  required); shows a Snackbar with the result. This is the only in-app export trigger besides the
-  Tasker `CMD_EXPORT` broadcast.
+  required). On success, opens the Android share sheet (`ACTION_SEND` chooser) with the exported
+  file attached via a `FileProvider` (authority `at.designer2k2.nearscan.fileprovider`, paths
+  declared in `res/xml/file_paths.xml`) — lets the user immediately share the export by email,
+  messenger, etc., matching `ExportFormat.mimeType` (`text/csv` / `application/geo+json` /
+  `application/vnd.sqlite3`). Falls back to a Snackbar if the share sheet can't be launched (e.g.
+  a user-typed `outputFolder` path outside the declared FileProvider paths) or on export failure.
+  This is the only in-app export trigger besides the Tasker `CMD_EXPORT` broadcast (which does not
+  share — it's meant for headless automation).
 - MQTT: [ ] Enable → broker / topic fields appear ✅ implemented; connects/disconnects live —
   enabling mid-session actually connects instead of silently no-op'ing
 - Keep screen on while running: [ ] toggle ✅ implemented

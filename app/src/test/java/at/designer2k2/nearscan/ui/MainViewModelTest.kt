@@ -183,6 +183,8 @@ class MainViewModelTest {
         val result = vm.uiState.value.exportResult
         assertEquals(true, result?.success)
         assertEquals("nearscan_wigle_123.csv", result?.message)
+        assertEquals(exportedFile.absolutePath, result?.filePath)
+        assertEquals("text/csv", result?.mimeType)
         assertFalse(vm.uiState.value.isExporting)
     }
 

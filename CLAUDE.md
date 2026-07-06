@@ -120,7 +120,7 @@ They do NOT appear in WiGLE CSV export (fixed schema).
 
 ```
 ┌─────────────────────────────────┐
-│  NearScan                    ⚙️  │
+│  NearScan                 📤 ⚙️  │
 ├─────────────────────────────────┤
 │                                 │
 │  📍 47.2692° N, 11.4041° E     │
@@ -150,6 +150,11 @@ They do NOT appear in WiGLE CSV export (fixed schema).
 - The ⚙️ top-bar icon toggles/scrolls to the Advanced Settings card (its `expanded` state is
   hoisted up to `MainScreen`, not owned internally by the card) — there is no separate Settings
   screen
+- The 📤 top-bar icon (left of the gear) triggers `MainViewModel.exportNow()` directly, one tap
+  from the main screen — added so export isn't only reachable by first expanding Advanced
+  Settings. Shows a small `CircularProgressIndicator` in place of the icon while `isExporting`.
+  Uses whichever export format is currently selected in Advanced Settings; the format dropdown
+  and a second **Export Now** button remain there too for users who want to pick a format first.
 
 ### Set Location Dialog
 - Lat / Lon / Altitude text fields (decimal degrees)

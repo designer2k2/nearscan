@@ -4,45 +4,29 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Radar grid: concentric rings, centered (54,54), kept within the 66dp adaptive-icon
-         safe zone (radius 33) so no launcher mask crops it. -->
+    <!-- Themed icons (Android 13+) render this as a single OS-tinted silhouette, so every
+         shape here is opaque white regardless of the color it represents in the full-color
+         version. -->
     <path
         android:pathData="M24,54 A30,30 0 1,0 84,54 A30,30 0 1,0 24,54"
-        android:strokeColor="#8000E5FF"
+        android:strokeColor="#FFFFFF"
         android:strokeWidth="1.5"
         android:fillColor="#00000000" />
     <path
         android:pathData="M34,54 A20,20 0 1,0 74,54 A20,20 0 1,0 34,54"
-        android:strokeColor="#5500E5FF"
+        android:strokeColor="#FFFFFF"
         android:strokeWidth="1"
         android:fillColor="#00000000" />
     <path
         android:pathData="M44,54 A10,10 0 1,0 64,54 A10,10 0 1,0 44,54"
-        android:strokeColor="#4000E5FF"
+        android:strokeColor="#FFFFFF"
         android:strokeWidth="1"
         android:fillColor="#00000000" />
 
-    <!-- Crosshair -->
-    <path
-        android:pathData="M24,54 L84,54"
-        android:strokeColor="#3300E5FF"
-        android:strokeWidth="1" />
-    <path
-        android:pathData="M54,24 L54,84"
-        android:strokeColor="#3300E5FF"
-        android:strokeWidth="1" />
-
-    <!-- Sweep trail (wide, faint) -->
-    <path
-        android:pathData="M54,54 L54,24 L79.87,39 Z"
-        android:fillColor="#2600E5FF" />
-
-    <!-- Sweep leading edge (solid) -->
     <path
         android:pathData="M54,54 L59.21,24.46 L76.98,34.71 Z"
-        android:fillColor="#00E5FF" />
+        android:fillColor="#FFFFFF" />
 
-    <!-- Detected signal blips -->
     <path
         android:pathData="M59.18,34.68 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0 -5,0"
         android:fillColor="#FFFFFF" />
@@ -53,8 +37,7 @@
         android:pathData="M73.09,34.91 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0 -3,0"
         android:fillColor="#FFFFFF" />
 
-    <!-- Radar origin -->
     <path
         android:pathData="M54,54 m-2,0 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0"
-        android:fillColor="#00E5FF" />
+        android:fillColor="#FFFFFF" />
 </vector>

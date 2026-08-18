@@ -50,6 +50,7 @@ class MainViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         every { settingsDataStore.settings } returns flowOf(NearScanSettings())
+        every { settingsDataStore.sessionActive } returns flowOf(false to 0L)
         every { wifiScanDao.count() } returns flowOf(0L)
         every { btScanDao.count() } returns flowOf(0L)
         every { cellScanDao.count() } returns flowOf(0L)

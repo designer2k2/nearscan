@@ -9,6 +9,7 @@ local.properties
 .idea/
 *.iml
 *.jks
+keystore.properties
 google-services.json
 .kotlin/
 captures/

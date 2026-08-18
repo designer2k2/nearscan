@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -50,8 +52,11 @@ fun AdvancedSettingsCard(
     onExpandedChange: (Boolean) -> Unit,
     isExporting: Boolean,
     onExportNow: () -> Unit,
+    onClearData: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showClearConfirm by remember { mutableStateOf(false) }
+
     Card(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -175,9 +180,40 @@ fun AdvancedSettingsCard(
                         checked = settings.dedupEnabled,
                         onChange = { onSettingsChange(settings.copy(dedupEnabled = it)) },
                     )
+
+                    Button(
+                        onClick = { showClearConfirm = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(stringResource(R.string.clear_data))
+                    }
                 }
             }
         }
+    }
+
+    if (showClearConfirm) {
+        AlertDialog(
+            onDismissRequest = { showClearConfirm = false },
+            title = { Text(stringResource(R.string.clear_data_title)) },
+            text = { Text(stringResource(R.string.clear_data_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showClearConfirm = false
+                        onClearData()
+                    },
+                ) {
+                    Text(stringResource(R.string.clear_data_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearConfirm = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
     }
 }
 

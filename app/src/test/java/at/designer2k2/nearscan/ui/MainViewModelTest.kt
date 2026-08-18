@@ -205,4 +205,18 @@ class MainViewModelTest {
         vm.consumeExportResult()
         assertNull(vm.uiState.value.exportResult)
     }
+
+    @Test
+    fun `clearAllData deletes from all three DAOs`() = runVmTest { vm ->
+        coEvery { wifiScanDao.clearAll() } just Runs
+        coEvery { btScanDao.clearAll() } just Runs
+        coEvery { cellScanDao.clearAll() } just Runs
+        vm.clearAllData()
+        testScheduler.runCurrent()
+        coVerify {
+            wifiScanDao.clearAll()
+            btScanDao.clearAll()
+            cellScanDao.clearAll()
+        }
+    }
 }

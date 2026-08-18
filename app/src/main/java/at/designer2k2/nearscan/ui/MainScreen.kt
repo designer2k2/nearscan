@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -68,6 +70,7 @@ fun MainScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showLocationDialog by remember { mutableStateOf(false) }
+    var showHelp by remember { mutableStateOf(false) }
     var advancedExpanded by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
@@ -75,13 +78,25 @@ fun MainScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    if (showHelp) {
+        HelpScreen(onBack = { showHelp = false })
+        return
+    }
+
     var missingPermissions by remember { mutableStateOf(emptyList<String>()) }
+    // Re-checked on every resume rather than gated behind the one-shot MainActivity prompt: a
+    // user who denied the system dialog once (or revoked it later from Settings) would otherwise
+    // never see an in-app signal that Doze can silently pause scanning while stationary/screen-off
+    // — the app's core use case.
+    var batteryOptimized by remember { mutableStateOf(false) }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 missingPermissions = RequiredPermissions.forScanning().filter {
                     ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
                 }
+                val pm = context.getSystemService(android.os.PowerManager::class.java)
+                batteryOptimized = pm?.isIgnoringBatteryOptimizations(context.packageName) == false
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -148,6 +163,12 @@ fun MainScreen(
                             contentDescription = stringResource(R.string.settings),
                         )
                     }
+                    IconButton(onClick = { showHelp = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.HelpOutline,
+                            contentDescription = stringResource(R.string.help),
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
@@ -176,6 +197,21 @@ fun MainScreen(
                                 Uri.fromParts("package", context.packageName, null),
                             ),
                         )
+                    },
+                )
+            }
+
+            if (batteryOptimized) {
+                BatteryOptimizationBanner(
+                    onRequestExemption = {
+                        runCatching {
+                            context.startActivity(
+                                Intent(
+                                    AndroidSettings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                    Uri.parse("package:${context.packageName}"),
+                                ),
+                            )
+                        }
                     },
                 )
             }
@@ -225,6 +261,7 @@ fun MainScreen(
                 onExpandedChange = { advancedExpanded = it },
                 isExporting = state.isExporting,
                 onExportNow = viewModel::exportNow,
+                onClearData = viewModel::clearAllData,
             )
         }
     }
@@ -243,6 +280,24 @@ fun MainScreen(
                 showLocationDialog = false
             },
             onDismiss = { showLocationDialog = false },
+        )
+    }
+
+    if (state.interruptedSessionDetected) {
+        AlertDialog(
+            onDismissRequest = viewModel::dismissInterruptedSession,
+            title = { Text(stringResource(R.string.interrupted_session_title)) },
+            text = { Text(stringResource(R.string.interrupted_session_message)) },
+            confirmButton = {
+                TextButton(onClick = viewModel::resumeInterruptedSession) {
+                    Text(stringResource(R.string.interrupted_session_resume))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissInterruptedSession) {
+                    Text(stringResource(R.string.interrupted_session_dismiss))
+                }
+            },
         )
     }
 }
@@ -284,6 +339,36 @@ private fun MissingPermissionsBanner(
             }
             TextButton(onClick = onOpenSettings) {
                 Text(stringResource(R.string.open_settings))
+            }
+        }
+    }
+}
+
+@Composable
+private fun BatteryOptimizationBanner(
+    onRequestExemption: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                )
+                Text(
+                    text = stringResource(R.string.battery_optimization_warning),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+            TextButton(onClick = onRequestExemption) {
+                Text(stringResource(R.string.battery_optimization_fix))
             }
         }
     }

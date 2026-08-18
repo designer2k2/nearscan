@@ -32,13 +32,38 @@
     <string name="mqtt_topic">Topic</string>
     <string name="keep_screen_on">Keep screen on</string>
     <string name="dedup">Deduplicate</string>
+    <string name="clear_data">Clear Data</string>
+    <string name="clear_data_title">Clear all scan data?</string>
+    <string name="clear_data_message">This permanently deletes every logged WiFi, Bluetooth, and Cell record. Settings are not affected. This can\'t be undone.</string>
+    <string name="clear_data_confirm">Delete Everything</string>
 
     <string name="notification_channel_name">Scanning</string>
     <string name="notification_title">NearScan</string>
     <string name="notification_running">Scanning the RF environment</string>
     <string name="no_location_set">No location set</string>
-    <string name="notification_counts">WiFi: %1$d  BT: %2$d  Cell: %3$d</string>
+    <string name="notification_counts">WiFi: %1$d  BT: %2$d  Cell: %3$d  •  %4$s</string>
     <string name="notification_start_blocked">Couldn\'t start scanning in the background. Tap to open NearScan and start manually.</string>
+    <string name="notification_interrupted_by_reboot">A device restart interrupted your scan session. Tap to reopen NearScan and resume.</string>
+    <string name="interrupted_session_title">Scan session interrupted</string>
+    <string name="interrupted_session_message">Your last scan session ended unexpectedly — likely a device restart or the system stopping the app to save battery. Resume where it left off, or dismiss to end it.</string>
+    <string name="interrupted_session_resume">Resume</string>
+    <string name="interrupted_session_dismiss">Dismiss</string>
+
+    <string name="help">Help</string>
+    <string name="help_back">Back</string>
+    <string name="help_title">How to use NearScan</string>
+    <string name="help_section_basics">Basics</string>
+    <string name="help_basics_body">NearScan scans WiFi, Bluetooth (Classic + BLE), and cell towers in the background and logs each sighting with your current location. Tap START to begin a session — it keeps running with the screen off. Tap STOP to end it.</string>
+    <string name="help_section_location">Location</string>
+    <string name="help_location_body">Set your location manually, or use the GPS button in the Set Location dialog for a quick rough fix. Every logged record uses whichever location was last set — update it whenever you move somewhere new.</string>
+    <string name="help_section_scan_types">Scan types &amp; intervals</string>
+    <string name="help_scan_types_body">Open the settings (gear) panel to enable or disable WiFi, Bluetooth, BLE, and Cell scanning independently and set how often each one runs. WiFi can also be filtered by minimum signal strength and by band (2.4/5/6 GHz).</string>
+    <string name="help_section_export">Exporting your data</string>
+    <string name="help_export_body">Tap the share icon in the top bar to export your scan history (WiGLE CSV, custom CSV, GeoJSON, or SQLite) and send it by mail, messenger, or cloud storage from the share sheet. Turn on auto-export in settings to export on a fixed interval automatically.</string>
+    <string name="help_section_battery">Keeping it running</string>
+    <string name="help_battery_body">For long or multi-day sessions, allow NearScan to ignore battery optimization when prompted — otherwise Android\'s Doze mode can pause scanning while the phone is stationary with the screen off.</string>
+    <string name="help_section_tasker">Tasker / automation</string>
+    <string name="help_tasker_intro">NearScan can be fully controlled from Tasker (or MacroDroid/Automate) using standard Android broadcasts and a Content Provider — no plugin needed. Reference below; action and extra names are shown in English since they\'re literal values you enter into Tasker.</string>
 
     <string name="gps_accuracy">Accuracy: %1$.0f m</string>
     <string name="location_invalid">Enter a valid latitude and longitude</string>
@@ -53,6 +78,8 @@
     <string name="permission_affects_bluetooth">Bluetooth scanning</string>
     <string name="permission_affects_cell">Cell scanning</string>
     <string name="open_settings">Open Settings</string>
+    <string name="battery_optimization_warning">Battery optimization is on — Android may pause scanning when the screen is off and the phone is stationary.</string>
+    <string name="battery_optimization_fix">Allow background scanning</string>
 
     <string name="wifi_min_rssi">Min RSSI: %1$d dBm</string>
     <string name="wifi_bands">WiFi bands</string>

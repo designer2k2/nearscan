@@ -35,6 +35,10 @@ class MqttClient @Inject constructor() {
                 isCleanSession = true
                 connectionTimeout = 10
                 keepAliveInterval = 30
+                // A session can run for hours/days; without this, the very first network blip
+                // (Doze maintenance window, WiFi roam, broker restart) permanently kills
+                // publishing until the user manually toggles MQTT off and on again.
+                isAutomaticReconnect = true
             }
             c.connect(options)
             client = c

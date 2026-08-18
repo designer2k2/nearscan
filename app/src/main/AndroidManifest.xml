@@ -6,13 +6,17 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
 
-    <!-- Location (required for WiFi/BT scan results, single GPS fix) -->
+    <!-- Location (required for WiFi/BT scan results, single GPS fix). Android 12+ only shows the
+         runtime dialog's precise-location option when COARSE is requested alongside FINE in the
+         same request; RequiredPermissions.forScanning() requests both together. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
-    <!-- Bluetooth (Android 12+) -->
+    <!-- Bluetooth (Android 12+). No neverForLocation: the app already holds FINE location and
+         geo-stamps every BT/BLE record, so deriving location from scan results costs nothing and
+         without this flag iBeacon/Eddystone-style advertisements would otherwise be filtered out. -->
     <uses-permission
         android:name="android.permission.BLUETOOTH_SCAN"
-        android:usesPermissionFlags="neverForLocation"
         tools:targetApi="s" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
@@ -33,6 +37,9 @@
 
     <!-- Persistent foreground-service notification (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Detects a reboot ending an active session, to prompt the user to resume -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!--
         Exempt from Doze/App Standby so the foreground scan service survives hours/days
@@ -92,6 +99,18 @@
                 <action android:name="at.designer2k2.nearscan.CMD_EXPORT" />
                 <action android:name="at.designer2k2.nearscan.CMD_SET_LOCATION" />
                 <action android:name="at.designer2k2.nearscan.CMD_SET_INTERVAL" />
+                <action android:name="at.designer2k2.nearscan.CMD_CLEAR_DATA" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Detects a reboot that ended an active scan session, to prompt the user to resume.
+             BOOT_COMPLETED is a protected broadcast only the system can send, so this doesn't
+             need to be exported to other apps. -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 

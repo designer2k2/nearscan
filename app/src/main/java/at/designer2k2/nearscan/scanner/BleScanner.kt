@@ -2,6 +2,7 @@ package at.designer2k2.nearscan.scanner
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import at.designer2k2.nearscan.db.BtScanEntity
@@ -57,8 +58,12 @@ class BleScanner @Inject constructor(
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
             .build()
 
+        // Since Android 8.1, AOSP suspends delivery of *unfiltered* BLE scans while the screen is
+        // off — passing an (empty-matching) filter list instead of null keeps results flowing.
+        val filters = listOf(ScanFilter.Builder().build())
+
         val result = withTimeoutOrNull(OUTER_TIMEOUT_MS) {
-            val started = runCatching { scanner.startScan(null, settings, callback) }
+            val started = runCatching { scanner.startScan(filters, settings, callback) }
             if (started.isFailure) return@withTimeoutOrNull emptyList()
             delay(SCAN_WINDOW_MS)
             if (failed.get()) emptyList() else synchronized(found) { found.values.toList() }

@@ -13,6 +13,10 @@ interface WifiScanDao {
     @Query("SELECT COUNT(*) FROM wifi_scans")
     fun count(): Flow<Long>
 
+    /** Used to recompute the session counter after a resumed (not user-stopped) session. */
+    @Query("SELECT COUNT(*) FROM wifi_scans WHERE timestamp >= :since")
+    suspend fun countSince(since: Long): Int
+
     @Query("SELECT * FROM wifi_scans ORDER BY timestamp ASC LIMIT :limit OFFSET :offset")
     suspend fun getPage(limit: Int, offset: Int): List<WifiScanEntity>
 
@@ -22,6 +26,9 @@ interface WifiScanDao {
 
     @Query("DELETE FROM wifi_scans WHERE timestamp < :cutoff")
     suspend fun deleteOlderThan(cutoff: Long)
+
+    @Query("DELETE FROM wifi_scans")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -32,6 +39,10 @@ interface BtScanDao {
     @Query("SELECT COUNT(*) FROM bt_scans")
     fun count(): Flow<Long>
 
+    /** Used to recompute the session counter after a resumed (not user-stopped) session. */
+    @Query("SELECT COUNT(*) FROM bt_scans WHERE timestamp >= :since")
+    suspend fun countSince(since: Long): Int
+
     @Query("SELECT * FROM bt_scans ORDER BY timestamp ASC LIMIT :limit OFFSET :offset")
     suspend fun getPage(limit: Int, offset: Int): List<BtScanEntity>
 
@@ -41,6 +52,9 @@ interface BtScanDao {
 
     @Query("DELETE FROM bt_scans WHERE timestamp < :cutoff")
     suspend fun deleteOlderThan(cutoff: Long)
+
+    @Query("DELETE FROM bt_scans")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -51,6 +65,10 @@ interface CellScanDao {
     @Query("SELECT COUNT(*) FROM cell_scans")
     fun count(): Flow<Long>
 
+    /** Used to recompute the session counter after a resumed (not user-stopped) session. */
+    @Query("SELECT COUNT(*) FROM cell_scans WHERE timestamp >= :since")
+    suspend fun countSince(since: Long): Int
+
     @Query("SELECT * FROM cell_scans ORDER BY timestamp ASC LIMIT :limit OFFSET :offset")
     suspend fun getPage(limit: Int, offset: Int): List<CellScanEntity>
 
@@ -60,4 +78,7 @@ interface CellScanDao {
 
     @Query("DELETE FROM cell_scans WHERE timestamp < :cutoff")
     suspend fun deleteOlderThan(cutoff: Long)
+
+    @Query("DELETE FROM cell_scans")
+    suspend fun clearAll()
 }

@@ -41,34 +41,40 @@ class WifiScanner @Inject constructor(
                 val receiver = object : BroadcastReceiver() {
                     override fun onReceive(c: Context?, intent: Intent?) {
                         runCatching { context.unregisterReceiver(this) }
-                        val results = runCatching { wifiManager.scanResults }.getOrDefault(emptyList())
-                        val rows = results.map { r ->
-                            WifiScanEntity(
-                                timestamp = now,
-                                latitude = null,
-                                longitude = null,
-                                altitude = null,
-                                ssid = r.SSID,
-                                bssid = r.BSSID ?: "",
-                                rssi = r.level,
-                                frequency = r.frequency,
-                                channel = frequencyToChannel(r.frequency),
-                                capabilities = r.capabilities,
-                                band = bandFor(r.frequency),
-                            )
-                        }
-                        if (cont.isActive) cont.resume(rows)
+                        if (cont.isActive) cont.resume(currentScanRows(now))
                     }
                 }
                 context.registerReceiver(receiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
                 cont.invokeOnCancellation { runCatching { context.unregisterReceiver(receiver) } }
                 if (!wifiManager.startScan()) {
-                    // Throttled: fall back to whatever cached results exist.
+                    // Android 9+ throttles foreground apps to 4 scans per 2 minutes; a throttled
+                    // request never fires SCAN_RESULTS_AVAILABLE_ACTION, so fall back to whatever
+                    // results are already cached from the last successful scan instead of an
+                    // empty round.
                     runCatching { context.unregisterReceiver(receiver) }
-                    if (cont.isActive) cont.resume(emptyList())
+                    if (cont.isActive) cont.resume(currentScanRows(now))
                 }
             }
         } ?: emptyList()
+    }
+
+    private fun currentScanRows(timestamp: Long): List<WifiScanEntity> {
+        val results = runCatching { wifiManager.scanResults }.getOrDefault(emptyList())
+        return results.map { r ->
+            WifiScanEntity(
+                timestamp = timestamp,
+                latitude = null,
+                longitude = null,
+                altitude = null,
+                ssid = r.SSID,
+                bssid = r.BSSID ?: "",
+                rssi = r.level,
+                frequency = r.frequency,
+                channel = frequencyToChannel(r.frequency),
+                capabilities = r.capabilities,
+                band = bandFor(r.frequency),
+            )
+        }
     }
 
     private fun frequencyToChannel(freq: Int): Int = when {

@@ -3,6 +3,9 @@ package at.designer2k2.nearscan.ipc
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import at.designer2k2.nearscan.db.BtScanDao
+import at.designer2k2.nearscan.db.CellScanDao
+import at.designer2k2.nearscan.db.WifiScanDao
 import at.designer2k2.nearscan.export.ExportManager
 import at.designer2k2.nearscan.prefs.ExportFormat
 import at.designer2k2.nearscan.prefs.SettingsDataStore
@@ -29,6 +32,9 @@ class CommandReceiver : BroadcastReceiver() {
     @Inject lateinit var settingsDataStore: SettingsDataStore
     @Inject lateinit var exportManager: ExportManager
     @Inject lateinit var taskerBroadcaster: TaskerBroadcaster
+    @Inject lateinit var wifiScanDao: WifiScanDao
+    @Inject lateinit var btScanDao: BtScanDao
+    @Inject lateinit var cellScanDao: CellScanDao
 
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
@@ -41,6 +47,7 @@ class CommandReceiver : BroadcastReceiver() {
             ACTION_EXPORT -> handleExport(context, intent)
             ACTION_SET_LOCATION -> handleSetLocation(intent)
             ACTION_SET_INTERVAL -> handleSetInterval(intent)
+            ACTION_CLEAR_DATA -> handleClearData()
         }
     }
 
@@ -98,6 +105,20 @@ class CommandReceiver : BroadcastReceiver() {
         }
     }
 
+    private fun handleClearData() {
+        val pending = goAsync()
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            try {
+                wifiScanDao.clearAll()
+                btScanDao.clearAll()
+                cellScanDao.clearAll()
+                ScanService.resetCounts()
+            } finally {
+                pending.finish()
+            }
+        }
+    }
+
     private fun Intent.getFlexibleDouble(key: String): Double? =
         FlexibleExtra.parseDouble(getStringExtra(key), getDoubleExtra(key, Double.NaN))
 
@@ -111,5 +132,6 @@ class CommandReceiver : BroadcastReceiver() {
         const val ACTION_EXPORT = "at.designer2k2.nearscan.CMD_EXPORT"
         const val ACTION_SET_LOCATION = "at.designer2k2.nearscan.CMD_SET_LOCATION"
         const val ACTION_SET_INTERVAL = "at.designer2k2.nearscan.CMD_SET_INTERVAL"
+        const val ACTION_CLEAR_DATA = "at.designer2k2.nearscan.CMD_CLEAR_DATA"
     }
 }

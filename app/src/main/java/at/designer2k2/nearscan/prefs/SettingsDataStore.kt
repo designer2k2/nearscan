@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -52,6 +53,12 @@ class SettingsDataStore @Inject constructor(
         val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
         val DEDUP = booleanPreferencesKey("dedup_enabled")
         val BATTERY_OPT_PROMPT_SHOWN = booleanPreferencesKey("battery_opt_prompt_shown")
+
+        // Deliberately outside NearScanSettings/update(): this tracks whether a scan session is
+        // still logically active across process death, not a user-facing setting, so it must
+        // never be clobbered by an unrelated settings save.
+        val SESSION_ACTIVE = booleanPreferencesKey("session_active")
+        val SESSION_START_MS = longPreferencesKey("session_start_ms")
 
         val EX_BATT_LEVEL = booleanPreferencesKey("extra_battery_level")
         val EX_BATT_CHARGING = booleanPreferencesKey("extra_battery_charging")
@@ -116,6 +123,27 @@ class SettingsDataStore @Inject constructor(
     /** Marks the one-time battery optimization exemption prompt as shown. */
     suspend fun markBatteryOptPromptShown() {
         context.dataStore.edit { it[Keys.BATTERY_OPT_PROMPT_SHOWN] = true }
+    }
+
+    /**
+     * Whether a scan session is still logically active (started but not yet cleanly stopped) and
+     * the timestamp it started at. Read by [at.designer2k2.nearscan.service.ScanService] on start
+     * to tell an OS-triggered `START_STICKY` restart (should resume the same session) apart from
+     * a genuine fresh start (should begin a new one).
+     */
+    val sessionActive: Flow<Pair<Boolean, Long>> = context.dataStore.data.map { p ->
+        (p[Keys.SESSION_ACTIVE] ?: false) to (p[Keys.SESSION_START_MS] ?: 0L)
+    }
+
+    suspend fun markSessionActive(startMs: Long) {
+        context.dataStore.edit {
+            it[Keys.SESSION_ACTIVE] = true
+            it[Keys.SESSION_START_MS] = startMs
+        }
+    }
+
+    suspend fun markSessionInactive() {
+        context.dataStore.edit { it[Keys.SESSION_ACTIVE] = false }
     }
 
     /** Persists every field of [settings]. */

@@ -10,6 +10,8 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
+import android.text.format.DateUtils
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import at.designer2k2.nearscan.R
@@ -77,6 +79,11 @@ class ScanService : Service() {
     private val jobs = mutableListOf<Job>()
     private val dedupTracker = DedupTracker()
 
+    // A foreground service alone does not keep the CPU awake once the screen turns off — only an
+    // actual PowerManager wake lock does. Without this, the scan loops' delay() timers stall
+    // whenever the screen is off, which is exactly the "scanning stops" symptom this fixes.
+    private var wakeLock: PowerManager.WakeLock? = null
+
     // Live snapshot of settings, kept up to date by a collector so location, MQTT, and dedup
     // can be toggled mid-session.
     @Volatile private var currentSettings: NearScanSettings = NearScanSettings()
@@ -93,17 +100,39 @@ class ScanService : Service() {
                 return START_NOT_STICKY
             }
         }
-        startForegroundNotification()
+        try {
+            startForegroundNotification()
+        } catch (e: SecurityException) {
+            // API 34+ throws SecurityException from startForeground() itself when the declared
+            // foregroundServiceType="location" is called without a currently-granted location
+            // permission (e.g. the user revoked it, or the broken pre-Android-12 COARSE+FINE
+            // runtime dialog left it ungranted). Bail out cleanly instead of crash-looping via
+            // START_STICKY.
+            Log.w("ScanService", "startForeground blocked, missing location permission", e)
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        acquireWakeLock()
         startScanning()
         return START_STICKY
     }
 
+    private fun acquireWakeLock() {
+        if (wakeLock?.isHeld == true) return
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "NearScan:ScanService").apply {
+            setReferenceCounted(false)
+            acquire()
+        }
+    }
+
+    private fun releaseWakeLock() {
+        wakeLock?.let { if (it.isHeld) it.release() }
+        wakeLock = null
+    }
+
     private fun startScanning() {
         if (status.value.isRunning) return
-        taskerBroadcaster.reset()
-        dedupTracker.reset()
-        status.update { it.copy(isRunning = true, sessionStartMs = System.currentTimeMillis()) }
-        taskerBroadcaster.onScanStarted()
 
         jobs += scope.launch {
             val settings = settingsDataStore.settings.first()
@@ -112,11 +141,56 @@ class ScanService : Service() {
             currentLon = settings.longitude
             currentAlt = settings.altitude
 
+            // Tells an OS-triggered START_STICKY restart (process died mid-session, system
+            // relaunches with no ACTION_STOP) apart from a genuine fresh start: a clean stop
+            // (stopScanning()) always clears this flag first, so if it's still set here, this is
+            // the same logical session resuming, not a new one. Without this, a restart would
+            // silently reset the notification duration, WiFi/BT/Cell counters, and Tasker
+            // dedup/first-sighting state back to zero mid-session.
+            val (resuming, persistedStart) = settingsDataStore.sessionActive.first()
+            val sessionStart = if (resuming) persistedStart else System.currentTimeMillis()
+            if (!resuming) {
+                taskerBroadcaster.reset()
+                dedupTracker.reset()
+            }
+            val restoredCounts = if (resuming) {
+                withContext(Dispatchers.IO) {
+                    Triple(
+                        runCatching { wifiScanDao.countSince(sessionStart) }.getOrDefault(0),
+                        runCatching { btScanDao.countSince(sessionStart) }.getOrDefault(0),
+                        runCatching { cellScanDao.countSince(sessionStart) }.getOrDefault(0),
+                    )
+                }
+            } else {
+                Triple(0, 0, 0)
+            }
+            status.update {
+                it.copy(
+                    isRunning = true,
+                    sessionStartMs = sessionStart,
+                    wifiCount = restoredCounts.first,
+                    btCount = restoredCounts.second,
+                    cellCount = restoredCounts.third,
+                )
+            }
+            if (!resuming) taskerBroadcaster.onScanStarted()
+            settingsDataStore.markSessionActive(sessionStart)
+
             withContext(Dispatchers.IO) {
                 val cutoff = System.currentTimeMillis() - RETENTION_DAYS * MS_PER_DAY
                 runCatching { wifiScanDao.deleteOlderThan(cutoff) }
                 runCatching { btScanDao.deleteOlderThan(cutoff) }
                 runCatching { cellScanDao.deleteOlderThan(cutoff) }
+            }
+
+            // Refreshes the notification's elapsed-time stat on its own cadence, independent of
+            // scan rounds — otherwise a session running only a slow scan type (e.g. Cell every
+            // 300s) would show a stale duration between rounds, which reads as "did it stop?".
+            jobs += launch {
+                while (isActive) {
+                    delay(10_000)
+                    updateNotification()
+                }
             }
 
             // Keep settings + location live so changes mid-session are picked up.
@@ -281,7 +355,12 @@ class ScanService : Service() {
     private suspend fun loop(intervalSec: Int, block: suspend () -> Unit) {
         val intervalMs = (intervalSec.coerceAtLeast(1)) * 1000L
         while (scope.isActive) {
-            runCatching { block() }
+            runCatching { block() }.onFailure {
+                // A round failing (e.g. SQLiteFullException on a full disk) must never silently
+                // stop the whole session — but it must also not vanish without a trace, or a
+                // persistently failing round looks identical to a healthy one from the outside.
+                Log.w("ScanService", "scan round failed", it)
+            }
             delay(intervalMs)
         }
     }
@@ -291,12 +370,17 @@ class ScanService : Service() {
         val durationS = if (s.sessionStartMs > 0L) (System.currentTimeMillis() - s.sessionStartMs) / 1000L else 0L
         jobs.forEach { it.cancel() }
         jobs.clear()
+        // Fire-and-forget on the service's own scope (not cancelled by the jobs.clear() above):
+        // this is the only place a session is marked inactive, so a later START_STICKY restart
+        // correctly treats itself as fresh rather than resuming a session the user already ended.
+        scope.launch(Dispatchers.IO) { runCatching { settingsDataStore.markSessionInactive() } }
         runCatching { mqttClient.disconnect() }
         taskerBroadcaster.onScanStopped(s.wifiCount, s.btCount, s.cellCount, durationS)
         taskerBroadcaster.reset()
         dedupTracker.reset()
         status.update { ScanStatus() }
         stopForeground(STOP_FOREGROUND_REMOVE)
+        releaseWakeLock()
         stopSelf()
     }
 
@@ -327,13 +411,20 @@ class ScanService : Service() {
             .setOngoing(true)
             .build()
 
-    /** Refreshes the foreground notification with live per-type counts. */
+    /** Refreshes the foreground notification with live per-type counts and elapsed session time. */
     private fun updateNotification() {
         val s = status.value
         if (!s.isRunning) return
+        val elapsedS = if (s.sessionStartMs > 0L) (System.currentTimeMillis() - s.sessionStartMs) / 1000L else 0L
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notification = buildNotification(
-            getString(R.string.notification_counts, s.wifiCount, s.btCount, s.cellCount),
+            getString(
+                R.string.notification_counts,
+                s.wifiCount,
+                s.btCount,
+                s.cellCount,
+                DateUtils.formatElapsedTime(elapsedS),
+            ),
         )
         nm.notify(NOTIFICATION_ID, notification)
     }
@@ -350,6 +441,7 @@ class ScanService : Service() {
         jobs.forEach { it.cancel() }
         scope.coroutineContext[Job]?.cancel()
         runCatching { mqttClient.disconnect() }
+        releaseWakeLock()
         status.update { ScanStatus() }
     }
 
@@ -366,6 +458,7 @@ class ScanService : Service() {
         private const val CHANNEL_ID = "nearscan_scanning"
         private const val NOTIFICATION_ID = 1001
         private const val NOTIFICATION_ID_BLOCKED = 1002
+        private const val NOTIFICATION_ID_REBOOT = 1003
         private const val RETENTION_DAYS = 30L
         private const val MS_PER_DAY = 24L * 60 * 60 * 1000
         const val ACTION_STOP = "at.designer2k2.nearscan.action.STOP"
@@ -388,12 +481,49 @@ class ScanService : Service() {
             }
         }
 
+        /**
+         * Called after the database is cleared (from the UI or the CMD_CLEAR_DATA Tasker
+         * command) so a currently-running session's in-memory counters — which are incremented
+         * independently of the DB — don't keep showing stale totals for records that no longer
+         * exist.
+         */
+        fun resetCounts() {
+            status.update { it.copy(wifiCount = 0, btCount = 0, cellCount = 0) }
+        }
+
         fun stop(context: Context) {
             val intent = Intent(context, ScanService::class.java).apply { action = ACTION_STOP }
-            context.startService(intent)
+            try {
+                context.startService(intent)
+            } catch (e: IllegalStateException) {
+                // Same background-start restriction as start() — e.g. a Tasker CMD_STOP/CMD_TOGGLE
+                // firing after the OS or an OEM battery manager already killed the service while
+                // the app was backgrounded, so there's nothing to stop and no foreground app
+                // context to satisfy the restriction. Not actionable; just don't crash the caller.
+                Log.w("ScanService", "stop() blocked by background restriction", e)
+            }
         }
 
         private fun notifyStartBlocked(context: Context) {
+            postTapToOpenNotification(context, NOTIFICATION_ID_BLOCKED, context.getString(R.string.notification_start_blocked))
+        }
+
+        /**
+         * Called from [at.designer2k2.nearscan.BootReceiver]: if a session was still active when
+         * the device rebooted, the session silently ended with no Tasker SCAN_STOPPED event and
+         * no user-visible signal. Android 15+ also forbids starting a `location`-type foreground
+         * service directly from a BOOT_COMPLETED receiver, so this can only prompt the user to
+         * reopen the app rather than resume scanning automatically.
+         */
+        fun notifySessionInterruptedByReboot(context: Context) {
+            postTapToOpenNotification(
+                context,
+                NOTIFICATION_ID_REBOOT,
+                context.getString(R.string.notification_interrupted_by_reboot),
+            )
+        }
+
+        private fun postTapToOpenNotification(context: Context, notificationId: Int, text: String) {
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val channel = NotificationChannel(
@@ -406,18 +536,18 @@ class ScanService : Service() {
             val openAppIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
             val pendingIntent = PendingIntent.getActivity(
                 context,
-                0,
+                notificationId,
                 openAppIntent,
                 PendingIntent.FLAG_IMMUTABLE,
             )
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setContentTitle(context.getString(R.string.notification_title))
-                .setContentText(context.getString(R.string.notification_start_blocked))
+                .setContentText(text)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
                 .build()
-            nm.notify(NOTIFICATION_ID_BLOCKED, notification)
+            nm.notify(notificationId, notification)
         }
     }
 }

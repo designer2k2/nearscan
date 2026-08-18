@@ -11,6 +11,10 @@ import android.os.Build
  */
 object RequiredPermissions {
     fun forScanning(): List<String> = buildList {
+        // Requested together: Android 12+ only shows the precise-location option in the runtime
+        // dialog when COARSE and FINE are requested in the same ActivityCompat.requestPermissions
+        // call, which MainActivity does since this whole list is passed in one request.
+        add(Manifest.permission.ACCESS_COARSE_LOCATION)
         add(Manifest.permission.ACCESS_FINE_LOCATION)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             add(Manifest.permission.BLUETOOTH_SCAN)

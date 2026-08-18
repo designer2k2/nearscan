@@ -45,15 +45,18 @@ data class MainUiState(
     val gpsFixResult: GpsFix? = null,  // consumed once then cleared
     val isExporting: Boolean = false,
     val exportResult: ExportResult? = null,  // consumed once then cleared
+    // True when DataStore still marks a session active but ScanService isn't running — an OS
+    // reboot, an OEM battery manager, or a low-memory kill ended it without a clean stop.
+    val interruptedSessionDetected: Boolean = false,
 )
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
     application: Application,
     private val settingsDataStore: SettingsDataStore,
-    wifiScanDao: WifiScanDao,
-    btScanDao: BtScanDao,
-    cellScanDao: CellScanDao,
+    private val wifiScanDao: WifiScanDao,
+    private val btScanDao: BtScanDao,
+    private val cellScanDao: CellScanDao,
     private val locationHelper: LocationHelper,
     private val exportManager: ExportManager,
 ) : AndroidViewModel(application) {
@@ -108,6 +111,16 @@ class MainViewModel @Inject constructor(
                         )
                     }
                 }
+            }
+        }
+
+        // Detects a session that ended without a clean stop (reboot / OEM kill / low-memory kill):
+        // DataStore still says active, but the service's in-memory status says otherwise.
+        viewModelScope.launch {
+            combine(settingsDataStore.sessionActive, ScanService.statusFlow) { (wasActive, _), status ->
+                wasActive && !status.isRunning
+            }.collect { interrupted ->
+                _uiState.update { it.copy(interruptedSessionDetected = interrupted) }
             }
         }
 
@@ -198,5 +211,27 @@ class MainViewModel @Inject constructor(
 
     fun consumeExportResult() {
         _uiState.update { it.copy(exportResult = null) }
+    }
+
+    /** Restarts the service; it reads the still-active persisted session and resumes it. */
+    fun resumeInterruptedSession() {
+        ScanService.start(getApplication())
+    }
+
+    /** Ends the stale session bookkeeping without restarting scanning. */
+    fun dismissInterruptedSession() {
+        viewModelScope.launch {
+            settingsDataStore.markSessionInactive()
+        }
+    }
+
+    /** Permanently deletes all logged WiFi/BT/Cell records. Does not affect settings. */
+    fun clearAllData() {
+        viewModelScope.launch {
+            wifiScanDao.clearAll()
+            btScanDao.clearAll()
+            cellScanDao.clearAll()
+            ScanService.resetCounts()
+        }
     }
 }

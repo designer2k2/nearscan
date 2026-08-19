@@ -42,7 +42,10 @@ It is **not affiliated with WiGLE** but exports a WiGLE-compatible CSV by defaul
 3. **Bluetooth LE** — address, name, RSSI, advertised service UUIDs, manufacturer-specific data
    (Company ID + hex payload) — the latter two gated by the "Capture BLE advertising data"
    setting (default on); see Advanced Settings below
-4. **Cell Towers** — MCC, MNC, LAC/TAC, CID, signal (dBm), technology (GSM/LTE/NR/5G)
+4. **Cell Towers** — MCC, MNC, LAC/TAC, CID, signal (dBm), technology (GSM/LTE/NR/5G),
+   registration status (camped cell vs. detected neighbor), and per-technology signal quality
+   (RSRP/RSRQ/SNR for LTE+NR, EcNo for WCDMA, bit error rate for GSM, timing advance for GSM+LTE,
+   plus a universal ASU level and 0–4 bar signal level) — see `CellScanner.kt`
 
 ### Location Input
 - **Manual coordinate entry** — lat/lon/altitude text fields, set once
@@ -91,9 +94,13 @@ It is **not affiliated with WiGLE** but exports a WiGLE-compatible CSV by defaul
   - optional extra fields (see Extra Fields below)
 
 ### Extra Logged Fields (optional, toggleable per field)
-When enabled, these are **collected at scan time and included in MQTT payloads and Custom CSV export**.
-They are **NOT stored as columns in the Room database** (DB entities only hold RF + location fields).
-They do NOT appear in WiGLE CSV export (fixed schema).
+When enabled, these are **collected once per scan round and stored as columns on every row of
+that round** (WiFi/BT/Cell entities all carry the same 11 `extra*` columns), and included in
+Custom CSV, GeoJSON, and MQTT payloads. Collected once per round (not once per entity) so a
+device read (battery, sensors, etc.) doesn't happen redundantly for a round that produces many
+rows; `ScanService.collectExtras()` is the single collection point, shared between storage and
+MQTT. They do NOT appear in WiGLE CSV export (fixed schema, same as the BLE advertising-data
+fields). Toggled from the "Extra Logged Fields" collapsible group in Advanced Settings.
 
 **Device State:**
 - `battery_level` — integer percent (0–100)
@@ -224,12 +231,15 @@ Cell towers change slowly enough to keep a 300s ceiling.
   device address on most modern peripherals — aren't rotated for privacy. Included in Custom CSV,
   GeoJSON, and MQTT payloads for BT rows; **not** included in WiGLE CSV (fixed schema, same as all
   other non-core fields).
+- **Extra Logged Fields** ✅ implemented — collapsible "Extra Logged Fields" group (collapsed by
+  default) with 11 toggles, one per field (see Extra Logged Fields below). Previously these 11
+  DataStore keys existed with no way to turn them on (no UI, no Tasker command) — a code-review
+  finding fixed together with wiring the fields into storage/exports.
 
 **Not yet in UI (settings exist in DataStore, UI controls not yet built):**
 - BT device class filter
 - Output folder picker — `outputFolder` key persisted (settable via Tasker `CMD_EXPORT`'s
   implicit use of it, or direct DataStore manipulation, but no in-app text field yet)
-- Extra Logged Fields checkboxes (battery, screen, network, sensors, memory) — all 11 keys persisted, `ExtraFieldsCollector` fully implemented; just no UI controls yet
 
 ---
 
@@ -502,6 +512,14 @@ system prompt described in Foreground Service above.
   `CellScanner.scan()` before touching `TelephonyManager`; `WifiScanner.scan()` explicitly checks
   `ACCESS_FINE_LOCATION` too (Android 9+ requires it for populated WiFi scan results). A missing
   permission returns an empty list rather than throwing.
+- `CellInfo.isRegistered` and each technology's richer `CellSignalStrength` getters (LTE:
+  `rsrp`/`rsrq`/`rssnr`/`timingAdvance`; NR: `ssRsrp`/`ssRsrq`/`ssSinr`; WCDMA: `ecNo`; GSM:
+  `bitErrorRate`/`timingAdvance`; all technologies: `asuLevel`/`level`) are mapped onto
+  `CellScanEntity`'s unified `isRegistered`/`asuLevel`/`signalLevel`/`rsrp`/`rsrq`/`snr`/`ecNo`/
+  `bitErrorRate`/`timingAdvance` columns, null where not applicable to that technology. These
+  getters use `Int.MAX_VALUE` (`CellInfo.UNAVAILABLE`) as a "not reported" sentinel — mapped to
+  `null` via `Int.orNullIfUnavailable()`, not the `-1` sentinel `sanitizeInt()` uses for lac/cid
+  (a real `-1` dB/dBm value is plausible for these, so `-1` isn't a safe "unavailable" marker here).
 
 ### Deduplication (optional, Advanced setting) ✅ implemented
 - Logic lives in `service/DedupTracker.kt` — pure Kotlin, no Android dependency, unit-tested

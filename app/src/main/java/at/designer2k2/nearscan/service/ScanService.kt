@@ -16,8 +16,11 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import at.designer2k2.nearscan.R
 import at.designer2k2.nearscan.db.BtScanDao
+import at.designer2k2.nearscan.db.BtScanEntity
 import at.designer2k2.nearscan.db.CellScanDao
+import at.designer2k2.nearscan.db.CellScanEntity
 import at.designer2k2.nearscan.db.WifiScanDao
+import at.designer2k2.nearscan.db.WifiScanEntity
 import at.designer2k2.nearscan.export.ExportManager
 import at.designer2k2.nearscan.extra.ExtraFields
 import at.designer2k2.nearscan.extra.ExtraFieldsCollector
@@ -221,11 +224,13 @@ class ScanService : Service() {
                 enabledSelector = { it.scanWifiEnabled },
                 intervalSelector = { it.intervalWifiSec },
             ) {
+                val roundStart = System.currentTimeMillis()
                 val rows = wifiScanner.scan().filter {
                     it.rssi >= currentSettings.wifiMinRssi && (it.band == null || it.band in currentSettings.wifiBands)
                 }
+                val extras = collectExtras(System.currentTimeMillis() - roundStart)
                 val stamped = rows.map {
-                    it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
+                    it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt).withExtras(extras)
                 }
                 val toStore = if (currentSettings.dedupEnabled) {
                     stamped.filter { dedupTracker.shouldLogWifi(it.bssid, it.rssi) }
@@ -234,7 +239,7 @@ class ScanService : Service() {
                 }
                 if (toStore.isNotEmpty()) wifiScanDao.insertAll(toStore)
                 status.update { it.copy(wifiCount = it.wifiCount + stamped.size) }
-                publishBatch(toStore)
+                publishBatch(toStore, extras)
                 updateNotification()
                 taskerBroadcaster.onNewWifi(stamped)
                 val s = status.value
@@ -245,9 +250,11 @@ class ScanService : Service() {
                 enabledSelector = { it.scanBtEnabled },
                 intervalSelector = { it.intervalBtSec },
             ) {
+                val roundStart = System.currentTimeMillis()
                 val rows = bluetoothScanner.scan()
+                val extras = collectExtras(System.currentTimeMillis() - roundStart)
                 val stamped = rows.map {
-                    it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
+                    it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt).withExtras(extras)
                 }
                 val toStore = if (currentSettings.dedupEnabled) {
                     stamped.filter { dedupTracker.shouldLogBt(it.address, it.rssi) }
@@ -256,7 +263,7 @@ class ScanService : Service() {
                 }
                 if (toStore.isNotEmpty()) btScanDao.insertAll(toStore)
                 status.update { it.copy(btCount = it.btCount + stamped.size) }
-                publishBatch(toStore)
+                publishBatch(toStore, extras)
                 updateNotification()
                 taskerBroadcaster.onNewBt(stamped)
                 val s = status.value
@@ -267,9 +274,11 @@ class ScanService : Service() {
                 enabledSelector = { it.scanBleEnabled },
                 intervalSelector = { it.intervalBleSec },
             ) {
+                val roundStart = System.currentTimeMillis()
                 val rows = bleScanner.scan(currentSettings.captureBleAdvertisingData)
+                val extras = collectExtras(System.currentTimeMillis() - roundStart)
                 val stamped = rows.map {
-                    it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
+                    it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt).withExtras(extras)
                 }
                 val toStore = if (currentSettings.dedupEnabled) {
                     stamped.filter { dedupTracker.shouldLogBt(it.address, it.rssi) }
@@ -278,7 +287,7 @@ class ScanService : Service() {
                 }
                 if (toStore.isNotEmpty()) btScanDao.insertAll(toStore)
                 status.update { it.copy(btCount = it.btCount + stamped.size) }
-                publishBatch(toStore)
+                publishBatch(toStore, extras)
                 updateNotification()
                 taskerBroadcaster.onNewBle(stamped)
                 val s = status.value
@@ -289,14 +298,16 @@ class ScanService : Service() {
                 enabledSelector = { it.scanCellEnabled },
                 intervalSelector = { it.intervalCellSec },
             ) {
+                val roundStart = System.currentTimeMillis()
                 val rows = cellScanner.scan()
+                val extras = collectExtras(System.currentTimeMillis() - roundStart)
                 val stamped = rows.map {
-                    it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
+                    it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt).withExtras(extras)
                 }
                 // Cell records are never deduplicated — cell info changes are always significant.
                 if (stamped.isNotEmpty()) cellScanDao.insertAll(stamped)
                 status.update { it.copy(cellCount = it.cellCount + stamped.size) }
-                publishBatch(stamped)
+                publishBatch(stamped, extras)
                 updateNotification()
                 taskerBroadcaster.onNewCell(stamped)
                 val s = status.value
@@ -339,17 +350,25 @@ class ScanService : Service() {
             }
     }
 
-    /** Publishes a stamped batch over MQTT when enabled, including any enabled extra fields. */
-    private suspend fun publishBatch(entities: List<Any>) = withContext(Dispatchers.IO) {
+    /** Publishes a stamped batch over MQTT when enabled, reusing the extras already collected for storage. */
+    private suspend fun publishBatch(entities: List<Any>, extras: ExtraFields?) = withContext(Dispatchers.IO) {
         if (entities.isEmpty()) return@withContext
         val settings = currentSettings
         if (!settings.mqttEnabled) return@withContext
-        val extras: ExtraFields? =
-            if (settings.anyExtraFieldEnabled) runCatching { extraFieldsCollector.collect(settings) }.getOrNull()
-            else null
         entities.forEach { entity ->
             mqttPublisher.publish(settings.mqttTopic, entity, currentLat, currentLon, currentAlt, extras)
         }
+    }
+
+    /**
+     * Collects the optional self-logged extra fields once per scan round (or null when none are
+     * enabled), stamping in how long the round itself took. Shared by both the DB row and the
+     * MQTT payload for that round so a device read only happens once.
+     */
+    private suspend fun collectExtras(elapsedMs: Long): ExtraFields? {
+        val settings = currentSettings
+        if (!settings.anyExtraFieldEnabled) return null
+        return runCatching { extraFieldsCollector.collect(settings) }.getOrNull()?.copy(scanDurationMs = elapsedMs)
     }
 
     private suspend fun loop(intervalSec: Int, block: suspend () -> Unit) {
@@ -551,3 +570,45 @@ class ScanService : Service() {
         }
     }
 }
+
+private fun WifiScanEntity.withExtras(extras: ExtraFields?): WifiScanEntity = copy(
+    extraBatteryLevel = extras?.batteryLevel,
+    extraBatteryCharging = extras?.batteryCharging,
+    extraBatteryTemperature = extras?.batteryTemperature,
+    extraScreenOn = extras?.screenOn,
+    extraMobileDataActive = extras?.mobileDataActive,
+    extraActiveNetworkType = extras?.activeNetworkType,
+    extraConnectedSsid = extras?.connectedSsid,
+    extraHeading = extras?.heading,
+    extraTilt = extras?.tilt,
+    extraScanDurationMs = extras?.scanDurationMs,
+    extraMemoryAvailableMb = extras?.memoryAvailableMb,
+)
+
+private fun BtScanEntity.withExtras(extras: ExtraFields?): BtScanEntity = copy(
+    extraBatteryLevel = extras?.batteryLevel,
+    extraBatteryCharging = extras?.batteryCharging,
+    extraBatteryTemperature = extras?.batteryTemperature,
+    extraScreenOn = extras?.screenOn,
+    extraMobileDataActive = extras?.mobileDataActive,
+    extraActiveNetworkType = extras?.activeNetworkType,
+    extraConnectedSsid = extras?.connectedSsid,
+    extraHeading = extras?.heading,
+    extraTilt = extras?.tilt,
+    extraScanDurationMs = extras?.scanDurationMs,
+    extraMemoryAvailableMb = extras?.memoryAvailableMb,
+)
+
+private fun CellScanEntity.withExtras(extras: ExtraFields?): CellScanEntity = copy(
+    extraBatteryLevel = extras?.batteryLevel,
+    extraBatteryCharging = extras?.batteryCharging,
+    extraBatteryTemperature = extras?.batteryTemperature,
+    extraScreenOn = extras?.screenOn,
+    extraMobileDataActive = extras?.mobileDataActive,
+    extraActiveNetworkType = extras?.activeNetworkType,
+    extraConnectedSsid = extras?.connectedSsid,
+    extraHeading = extras?.heading,
+    extraTilt = extras?.tilt,
+    extraScanDurationMs = extras?.scanDurationMs,
+    extraMemoryAvailableMb = extras?.memoryAvailableMb,
+)

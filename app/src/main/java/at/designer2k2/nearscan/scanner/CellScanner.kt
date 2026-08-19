@@ -60,6 +60,11 @@ class CellScanner @Inject constructor(
                 cid = id.cid.toLong().sanitizeLong(),
                 rssi = signal.dbm,
                 technology = "GSM",
+                isRegistered = isRegistered,
+                asuLevel = signal.asuLevel.orNullIfUnavailable(),
+                signalLevel = signal.level,
+                bitErrorRate = signal.bitErrorRate.orNullIfUnavailable(),
+                timingAdvance = signal.timingAdvance.orNullIfUnavailable(),
             )
         }
 
@@ -77,6 +82,13 @@ class CellScanner @Inject constructor(
                 cid = id.ci.toLong().sanitizeLong(),
                 rssi = signal.dbm,
                 technology = "LTE",
+                isRegistered = isRegistered,
+                asuLevel = signal.asuLevel.orNullIfUnavailable(),
+                signalLevel = signal.level,
+                rsrp = signal.rsrp.orNullIfUnavailable(),
+                rsrq = signal.rsrq.orNullIfUnavailable(),
+                snr = signal.rssnr.orNullIfUnavailable(),
+                timingAdvance = signal.timingAdvance.orNullIfUnavailable(),
             )
         }
 
@@ -94,6 +106,10 @@ class CellScanner @Inject constructor(
                 cid = id.cid.toLong().sanitizeLong(),
                 rssi = signal.dbm,
                 technology = "WCDMA",
+                isRegistered = isRegistered,
+                asuLevel = signal.asuLevel.orNullIfUnavailable(),
+                signalLevel = signal.level,
+                ecNo = signal.ecNo.orNullIfUnavailable(),
             )
         }
 
@@ -112,6 +128,12 @@ class CellScanner @Inject constructor(
                     cid = id.nci.sanitizeLong(),
                     rssi = signal.dbm,
                     technology = "NR",
+                    isRegistered = isRegistered,
+                    asuLevel = signal.asuLevel.orNullIfUnavailable(),
+                    signalLevel = signal.level,
+                    rsrp = signal.ssRsrp.orNullIfUnavailable(),
+                    rsrq = signal.ssRsrq.orNullIfUnavailable(),
+                    snr = signal.ssSinr.orNullIfUnavailable(),
                 )
             } else {
                 null
@@ -123,4 +145,9 @@ class CellScanner @Inject constructor(
 
     private fun Long.sanitizeLong(): Long =
         if (this == Int.MAX_VALUE.toLong() || this == Long.MAX_VALUE) -1L else this
+
+    // Signal-quality getters use Int.MAX_VALUE (== CellInfo.UNAVAILABLE) as their "not reported by
+    // this device/technology" sentinel. Unlike lac/cid, -1 is a plausible real value for some of
+    // these (dB/dBm measures), so map the sentinel to null instead of a magic number.
+    private fun Int.orNullIfUnavailable(): Int? = if (this == Int.MAX_VALUE) null else this
 }

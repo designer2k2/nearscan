@@ -186,6 +186,8 @@ fun AdvancedSettingsCard(
                         onChange = { onSettingsChange(settings.copy(dedupEnabled = it)) },
                     )
 
+                    ExtraFieldsSection(settings = settings, onSettingsChange = onSettingsChange)
+
                     Button(
                         onClick = { showClearConfirm = true },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
@@ -253,6 +255,92 @@ private fun ScanTypeRow(
             valueRange = 1f..maxIntervalSec.toFloat(),
             enabled = enabled,
         )
+    }
+}
+
+/** Collapsible group for the optional self-logged fields (battery, screen, network, sensors, memory). */
+@Composable
+private fun ExtraFieldsSection(
+    settings: NearScanSettings,
+    onSettingsChange: (NearScanSettings) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(text = stringResource(R.string.extra_fields_section), fontWeight = FontWeight.Medium)
+            Icon(
+                imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                contentDescription = null,
+            )
+        }
+        AnimatedVisibility(visible = expanded) {
+            Column(
+                modifier = Modifier.padding(top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                ToggleRow(
+                    label = stringResource(R.string.extra_battery_level),
+                    checked = settings.extraBatteryLevel,
+                    onChange = { onSettingsChange(settings.copy(extraBatteryLevel = it)) },
+                )
+                ToggleRow(
+                    label = stringResource(R.string.extra_battery_charging),
+                    checked = settings.extraBatteryCharging,
+                    onChange = { onSettingsChange(settings.copy(extraBatteryCharging = it)) },
+                )
+                ToggleRow(
+                    label = stringResource(R.string.extra_battery_temperature),
+                    checked = settings.extraBatteryTemp,
+                    onChange = { onSettingsChange(settings.copy(extraBatteryTemp = it)) },
+                )
+                ToggleRow(
+                    label = stringResource(R.string.extra_screen_on),
+                    checked = settings.extraScreenOn,
+                    onChange = { onSettingsChange(settings.copy(extraScreenOn = it)) },
+                )
+                ToggleRow(
+                    label = stringResource(R.string.extra_mobile_data_active),
+                    checked = settings.extraMobileData,
+                    onChange = { onSettingsChange(settings.copy(extraMobileData = it)) },
+                )
+                ToggleRow(
+                    label = stringResource(R.string.extra_active_network_type),
+                    checked = settings.extraNetworkType,
+                    onChange = { onSettingsChange(settings.copy(extraNetworkType = it)) },
+                )
+                ToggleRow(
+                    label = stringResource(R.string.extra_connected_ssid),
+                    checked = settings.extraConnectedSsid,
+                    onChange = { onSettingsChange(settings.copy(extraConnectedSsid = it)) },
+                )
+                ToggleRow(
+                    label = stringResource(R.string.extra_heading),
+                    checked = settings.extraHeading,
+                    onChange = { onSettingsChange(settings.copy(extraHeading = it)) },
+                )
+                ToggleRow(
+                    label = stringResource(R.string.extra_tilt),
+                    checked = settings.extraTilt,
+                    onChange = { onSettingsChange(settings.copy(extraTilt = it)) },
+                )
+                ToggleRow(
+                    label = stringResource(R.string.extra_scan_duration),
+                    checked = settings.extraScanDuration,
+                    onChange = { onSettingsChange(settings.copy(extraScanDuration = it)) },
+                )
+                ToggleRow(
+                    label = stringResource(R.string.extra_memory_available),
+                    checked = settings.extraMemory,
+                    onChange = { onSettingsChange(settings.copy(extraMemory = it)) },
+                )
+            }
+        }
     }
 }
 

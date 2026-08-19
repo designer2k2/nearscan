@@ -75,6 +75,15 @@ class MqttPublisher @Inject constructor(
                     append(",\"cid\":").append(jsonNum(entity.cid))
                     append(",\"rssi\":").append(entity.rssi)
                     append(",\"technology\":").append(jsonStr(entity.technology))
+                    append(",\"is_registered\":").append(jsonBool(entity.isRegistered))
+                    append(",\"asu_level\":").append(jsonNum(entity.asuLevel))
+                    append(",\"signal_level\":").append(jsonNum(entity.signalLevel))
+                    append(",\"rsrp\":").append(jsonNum(entity.rsrp))
+                    append(",\"rsrq\":").append(jsonNum(entity.rsrq))
+                    append(",\"snr\":").append(jsonNum(entity.snr))
+                    append(",\"ec_no\":").append(jsonNum(entity.ecNo))
+                    append(",\"bit_error_rate\":").append(jsonNum(entity.bitErrorRate))
+                    append(",\"timing_advance\":").append(jsonNum(entity.timingAdvance))
                     appendExtras(extras)
                     append("}")
                 }
@@ -110,6 +119,8 @@ class MqttPublisher @Inject constructor(
             ",\"alt\":${jsonNum(alt)}"
 
     private fun jsonNum(value: Number?): String = value?.toString() ?: "null"
+
+    private fun jsonBool(value: Boolean?): String = value?.toString() ?: "null"
 
     private fun jsonStr(value: String?): String {
         if (value == null) return "null"

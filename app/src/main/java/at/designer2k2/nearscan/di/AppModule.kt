@@ -9,6 +9,9 @@ import androidx.room.Room
 import at.designer2k2.nearscan.db.AppDatabase
 import at.designer2k2.nearscan.db.BtScanDao
 import at.designer2k2.nearscan.db.CellScanDao
+import at.designer2k2.nearscan.db.MIGRATION_1_2
+import at.designer2k2.nearscan.db.MIGRATION_2_3
+import at.designer2k2.nearscan.db.MIGRATION_3_4
 import at.designer2k2.nearscan.db.WifiScanDao
 import dagger.Module
 import dagger.Provides
@@ -25,7 +28,7 @@ object AppModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.NAME)
-            .fallbackToDestructiveMigration()
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .build()
 
     @Provides

@@ -17,4 +17,17 @@ data class WifiScanEntity(
     val channel: Int,
     val capabilities: String?,
     val band: String?,
+    // Optional self-logged fields (see prefs.NearScanSettings extra* toggles / extra.ExtraFields).
+    // Null when the corresponding toggle is off or the value couldn't be read.
+    val extraBatteryLevel: Int? = null,
+    val extraBatteryCharging: Boolean? = null,
+    val extraBatteryTemperature: Float? = null,
+    val extraScreenOn: Boolean? = null,
+    val extraMobileDataActive: Boolean? = null,
+    val extraActiveNetworkType: String? = null,
+    val extraConnectedSsid: String? = null,
+    val extraHeading: Float? = null,
+    val extraTilt: Float? = null,
+    val extraScanDurationMs: Long? = null,
+    val extraMemoryAvailableMb: Long? = null,
 )

@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase
         BtScanEntity::class,
         CellScanEntity::class,
     ],
-    version = 2,
+    version = 4,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {

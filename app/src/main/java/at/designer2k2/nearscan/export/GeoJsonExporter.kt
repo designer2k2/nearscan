@@ -41,6 +41,11 @@ class GeoJsonExporter @Inject constructor(
                 appendProp(props, "channel", r.channel)
                 appendProp(props, "capabilities", r.capabilities)
                 appendProp(props, "band", r.band)
+                appendExtraProps(
+                    props, r.extraBatteryLevel, r.extraBatteryCharging, r.extraBatteryTemperature,
+                    r.extraScreenOn, r.extraMobileDataActive, r.extraActiveNetworkType, r.extraConnectedSsid,
+                    r.extraHeading, r.extraTilt, r.extraScanDurationMs, r.extraMemoryAvailableMb,
+                )
                 w.append(feature(r.longitude, r.latitude, r.altitude, props.toString()))
             }
 
@@ -58,6 +63,11 @@ class GeoJsonExporter @Inject constructor(
                 appendProp(props, "is_ble", r.isBle)
                 appendProp(props, "service_uuids", r.serviceUuids)
                 appendProp(props, "manufacturer_data", r.manufacturerData)
+                appendExtraProps(
+                    props, r.extraBatteryLevel, r.extraBatteryCharging, r.extraBatteryTemperature,
+                    r.extraScreenOn, r.extraMobileDataActive, r.extraActiveNetworkType, r.extraConnectedSsid,
+                    r.extraHeading, r.extraTilt, r.extraScanDurationMs, r.extraMemoryAvailableMb,
+                )
                 w.append(feature(r.longitude, r.latitude, r.altitude, props.toString()))
             }
 
@@ -74,6 +84,20 @@ class GeoJsonExporter @Inject constructor(
                 appendProp(props, "cid", r.cid)
                 appendProp(props, "rssi", r.rssi)
                 appendProp(props, "technology", r.technology)
+                appendProp(props, "is_registered", r.isRegistered)
+                appendProp(props, "asu_level", r.asuLevel)
+                appendProp(props, "signal_level", r.signalLevel)
+                appendProp(props, "rsrp", r.rsrp)
+                appendProp(props, "rsrq", r.rsrq)
+                appendProp(props, "snr", r.snr)
+                appendProp(props, "ec_no", r.ecNo)
+                appendProp(props, "bit_error_rate", r.bitErrorRate)
+                appendProp(props, "timing_advance", r.timingAdvance)
+                appendExtraProps(
+                    props, r.extraBatteryLevel, r.extraBatteryCharging, r.extraBatteryTemperature,
+                    r.extraScreenOn, r.extraMobileDataActive, r.extraActiveNetworkType, r.extraConnectedSsid,
+                    r.extraHeading, r.extraTilt, r.extraScanDurationMs, r.extraMemoryAvailableMb,
+                )
                 w.append(feature(r.longitude, r.latitude, r.altitude, props.toString()))
             }
 
@@ -112,6 +136,34 @@ class GeoJsonExporter @Inject constructor(
         fun appendProp(sb: StringBuilder, key: String, value: Any?) {
             if (sb.isNotEmpty()) sb.append(",")
             sb.append("\"").append(key).append("\":").append(jsonValue(value))
+        }
+
+        /** Appends the optional self-logged extra fields, shared by all three feature types. */
+        fun appendExtraProps(
+            sb: StringBuilder,
+            batteryLevel: Int?,
+            batteryCharging: Boolean?,
+            batteryTemperature: Float?,
+            screenOn: Boolean?,
+            mobileDataActive: Boolean?,
+            activeNetworkType: String?,
+            connectedSsid: String?,
+            heading: Float?,
+            tilt: Float?,
+            scanDurationMs: Long?,
+            memoryAvailableMb: Long?,
+        ) {
+            appendProp(sb, "battery_level", batteryLevel)
+            appendProp(sb, "battery_charging", batteryCharging)
+            appendProp(sb, "battery_temperature", batteryTemperature)
+            appendProp(sb, "screen_on", screenOn)
+            appendProp(sb, "mobile_data_active", mobileDataActive)
+            appendProp(sb, "active_network_type", activeNetworkType)
+            appendProp(sb, "connected_ssid", connectedSsid)
+            appendProp(sb, "heading", heading)
+            appendProp(sb, "tilt", tilt)
+            appendProp(sb, "scan_duration_ms", scanDurationMs)
+            appendProp(sb, "memory_available_mb", memoryAvailableMb)
         }
 
         fun jsonValue(value: Any?): String = when (value) {

@@ -21,4 +21,17 @@ data class BtScanEntity(
     // (e.g. smart glasses) since many peripherals only advertise a name during pairing mode.
     val serviceUuids: String? = null,
     val manufacturerData: String? = null,
+    // Optional self-logged fields (see prefs.NearScanSettings extra* toggles / extra.ExtraFields).
+    // Null when the corresponding toggle is off or the value couldn't be read.
+    val extraBatteryLevel: Int? = null,
+    val extraBatteryCharging: Boolean? = null,
+    val extraBatteryTemperature: Float? = null,
+    val extraScreenOn: Boolean? = null,
+    val extraMobileDataActive: Boolean? = null,
+    val extraActiveNetworkType: String? = null,
+    val extraConnectedSsid: String? = null,
+    val extraHeading: Float? = null,
+    val extraTilt: Float? = null,
+    val extraScanDurationMs: Long? = null,
+    val extraMemoryAvailableMb: Long? = null,
 )

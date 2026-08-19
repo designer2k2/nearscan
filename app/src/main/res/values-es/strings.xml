@@ -27,6 +27,7 @@
     <string name="mqtt_topic">Tema</string>
     <string name="keep_screen_on">Mantener pantalla encendida</string>
     <string name="dedup">Deduplicar</string>
+    <string name="capture_ble_advertising_data">Capturar datos de publicidad BLE</string>
     <string name="clear_data">Borrar datos</string>
     <string name="clear_data_title">¿Borrar todos los datos de escaneo?</string>
     <string name="clear_data_message">Esto elimina permanentemente todos los registros de WiFi, Bluetooth y Celular. Los ajustes no se ven afectados. Esta acción no se puede deshacer.</string>

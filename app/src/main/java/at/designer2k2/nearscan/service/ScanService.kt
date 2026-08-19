@@ -267,7 +267,7 @@ class ScanService : Service() {
                 enabledSelector = { it.scanBleEnabled },
                 intervalSelector = { it.intervalBleSec },
             ) {
-                val rows = bleScanner.scan()
+                val rows = bleScanner.scan(currentSettings.captureBleAdvertisingData)
                 val stamped = rows.map {
                     it.copy(latitude = currentLat, longitude = currentLon, altitude = currentAlt)
                 }

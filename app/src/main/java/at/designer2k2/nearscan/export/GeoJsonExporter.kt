@@ -56,6 +56,8 @@ class GeoJsonExporter @Inject constructor(
                 appendProp(props, "rssi", r.rssi)
                 appendProp(props, "device_class", r.deviceClass)
                 appendProp(props, "is_ble", r.isBle)
+                appendProp(props, "service_uuids", r.serviceUuids)
+                appendProp(props, "manufacturer_data", r.manufacturerData)
                 w.append(feature(r.longitude, r.latitude, r.altitude, props.toString()))
             }
 

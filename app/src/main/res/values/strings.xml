@@ -32,6 +32,7 @@
     <string name="mqtt_topic">Topic</string>
     <string name="keep_screen_on">Keep screen on</string>
     <string name="dedup">Deduplicate</string>
+    <string name="capture_ble_advertising_data">Capture BLE advertising data</string>
     <string name="clear_data">Clear Data</string>
     <string name="clear_data_title">Clear all scan data?</string>
     <string name="clear_data_message">This permanently deletes every logged WiFi, Bluetooth, and Cell record. Settings are not affected. This can\'t be undone.</string>

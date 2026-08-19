@@ -15,4 +15,10 @@ data class BtScanEntity(
     val rssi: Int,
     val deviceClass: Int,
     val isBle: Boolean,
+    // BLE advertising data (null for BT Classic, or when the capture setting is off): comma-
+    // separated advertised service UUIDs, and "<companyId>:<hexPayload>" manufacturer-specific
+    // data entries joined by ";". More reliable than name/COD for fingerprinting a device model
+    // (e.g. smart glasses) since many peripherals only advertise a name during pairing mode.
+    val serviceUuids: String? = null,
+    val manufacturerData: String? = null,
 )

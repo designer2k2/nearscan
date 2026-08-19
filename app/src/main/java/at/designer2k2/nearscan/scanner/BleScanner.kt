@@ -21,7 +21,7 @@ class BleScanner @Inject constructor(
     private val bluetoothAdapter: BluetoothAdapter?,
 ) {
     @Suppress("MissingPermission")
-    suspend fun scan(): List<BtScanEntity> {
+    suspend fun scan(captureAdvertisingData: Boolean = true): List<BtScanEntity> {
         val adapter = bluetoothAdapter ?: return emptyList()
         if (!adapter.isEnabled) return emptyList()
         val scanner = adapter.bluetoothLeScanner ?: return emptyList()
@@ -34,6 +34,7 @@ class BleScanner @Inject constructor(
             override fun onScanResult(callbackType: Int, result: ScanResult?) {
                 result ?: return
                 val device = result.device ?: return
+                val record = if (captureAdvertisingData) result.scanRecord else null
                 synchronized(found) {
                     found[device.address] = BtScanEntity(
                         timestamp = now,
@@ -45,6 +46,18 @@ class BleScanner @Inject constructor(
                         rssi = result.rssi,
                         deviceClass = 0,
                         isBle = true,
+                        serviceUuids = record?.serviceUuids
+                            ?.takeIf { it.isNotEmpty() }
+                            ?.joinToString(",") { it.uuid.toString() },
+                        manufacturerData = record?.manufacturerSpecificData
+                            ?.takeIf { it.size() > 0 }
+                            ?.let { sparse ->
+                                (0 until sparse.size()).joinToString(";") { i ->
+                                    val companyId = sparse.keyAt(i)
+                                    val hex = sparse.valueAt(i).joinToString("") { b -> "%02x".format(b) }
+                                    "$companyId:$hex"
+                                }
+                            },
                     )
                 }
             }

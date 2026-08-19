@@ -42,7 +42,7 @@ class CustomCsvExporter @Inject constructor(
                         r.capabilities.csvField(),
                         (r.band ?: "").csvField(),
                         // BT-specific
-                        "", "", "", "", "",
+                        "", "", "", "", "", "", "",
                         // Cell-specific
                         "", "", "", "", "", "",
                     ).joinToString(","),
@@ -65,6 +65,8 @@ class CustomCsvExporter @Inject constructor(
                         r.rssi.toString(),
                         r.deviceClass.toString(),
                         r.isBle.toString(),
+                        r.serviceUuids.csvField(),
+                        r.manufacturerData.csvField(),
                         // Cell-specific
                         "", "", "", "", "", "",
                     ).joinToString(","),
@@ -82,7 +84,7 @@ class CustomCsvExporter @Inject constructor(
                         // WiFi-specific
                         "", "", "", "", "", "", "",
                         // BT-specific
-                        "", "", "", "", "",
+                        "", "", "", "", "", "", "",
                         // Cell-specific
                         r.mcc?.toString() ?: "",
                         r.mnc?.toString() ?: "",
@@ -114,7 +116,7 @@ class CustomCsvExporter @Inject constructor(
         const val HEADER =
             "type,timestamp,latitude,longitude,altitude," +
                 "ssid,bssid,wifi_rssi,frequency,channel,capabilities,band," +
-                "bt_address,bt_name,bt_rssi,device_class,is_ble," +
+                "bt_address,bt_name,bt_rssi,device_class,is_ble,service_uuids,manufacturer_data," +
                 "mcc,mnc,lac,cid,cell_rssi,technology"
     }
 }

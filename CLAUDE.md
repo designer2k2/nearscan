@@ -39,7 +39,9 @@ It is **not affiliated with WiGLE** but exports a WiGLE-compatible CSV by defaul
 ### Scan Types (all toggleable independently)
 1. **WiFi** — SSID, BSSID, RSSI, frequency/channel, capabilities (security), band (2.4/5/6 GHz)
 2. **Bluetooth Classic** — address, name, RSSI, device class (COD)
-3. **Bluetooth LE** — address, name, RSSI, advertised services
+3. **Bluetooth LE** — address, name, RSSI, advertised service UUIDs, manufacturer-specific data
+   (Company ID + hex payload) — the latter two gated by the "Capture BLE advertising data"
+   setting (default on); see Advanced Settings below
 4. **Cell Towers** — MCC, MNC, LAC/TAC, CID, signal (dBm), technology (GSM/LTE/NR/5G)
 
 ### Location Input
@@ -212,6 +214,16 @@ Cell towers change slowly enough to keep a 300s ceiling.
   to seconds for the shared `loop()` helper). Uses `ExportManager.resolveOutputDir()` /
   `exportFormat` from current settings and fires a `TaskerBroadcaster.onExportComplete` on success,
   same as `CMD_EXPORT`.
+- **Capture BLE advertising data** ✅ implemented — toggle, default **on**. When enabled,
+  `BleScanner` reads `ScanResult.scanRecord` and populates `BtScanEntity.serviceUuids`
+  (comma-separated advertised service UUIDs) and `.manufacturerData`
+  (`"<companyId>:<hexPayload>"` entries joined by `;`) for BLE rows. These are the most reliable
+  fingerprint for identifying a device *model* (e.g. wearables/smart glasses that don't broadcast
+  a friendly name during normal operation) since the Bluetooth SIG Company ID and GATT service
+  UUIDs are far less likely to be spoofed or withheld than the advertised name, and — unlike the
+  device address on most modern peripherals — aren't rotated for privacy. Included in Custom CSV,
+  GeoJSON, and MQTT payloads for BT rows; **not** included in WiGLE CSV (fixed schema, same as all
+  other non-core fields).
 
 **Not yet in UI (settings exist in DataStore, UI controls not yet built):**
 - BT device class filter
@@ -545,6 +557,7 @@ mqtt_topic                (string, default "nearscan/data")
 keep_screen_on            (boolean, default false)
 dedup_enabled             (boolean, default false)
 battery_opt_prompt_shown  (boolean, default false)  -- gates the one-time Doze-exemption prompt
+capture_ble_advertising_data (boolean, default true)  -- BLE service UUIDs + manufacturer data
 extra_battery_level       (boolean, default false)
 extra_battery_charging    (boolean, default false)
 extra_battery_temp        (boolean, default false)

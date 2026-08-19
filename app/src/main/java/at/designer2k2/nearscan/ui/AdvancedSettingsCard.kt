@@ -113,6 +113,11 @@ fun AdvancedSettingsCard(
                         onEnabledChange = { onSettingsChange(settings.copy(scanBleEnabled = it)) },
                         onIntervalChange = { onSettingsChange(settings.copy(intervalBleSec = it)) },
                     )
+                    ToggleRow(
+                        label = stringResource(R.string.capture_ble_advertising_data),
+                        checked = settings.captureBleAdvertisingData,
+                        onChange = { onSettingsChange(settings.copy(captureBleAdvertisingData = it)) },
+                    )
                     ScanTypeRow(
                         label = stringResource(R.string.scan_cell),
                         enabled = settings.scanCellEnabled,

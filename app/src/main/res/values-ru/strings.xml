@@ -27,6 +27,7 @@
     <string name="mqtt_topic">Топик</string>
     <string name="keep_screen_on">Не выключать экран</string>
     <string name="dedup">Дедупликация</string>
+    <string name="capture_ble_advertising_data">Захватывать рекламные данные BLE</string>
     <string name="clear_data">Очистить данные</string>
     <string name="clear_data_title">Очистить все данные сканирования?</string>
     <string name="clear_data_message">Это безвозвратно удалит все записи WiFi, Bluetooth и сотовой сети. Настройки не затрагиваются. Это действие нельзя отменить.</string>

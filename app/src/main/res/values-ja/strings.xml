@@ -27,6 +27,7 @@
     <string name="mqtt_topic">トピック</string>
     <string name="keep_screen_on">画面を常にオン</string>
     <string name="dedup">重複排除</string>
+    <string name="capture_ble_advertising_data">BLEアドバタイジングデータを取得</string>
     <string name="clear_data">データを消去</string>
     <string name="clear_data_title">すべてのスキャンデータを消去しますか？</string>
     <string name="clear_data_message">記録されたすべてのWiFi、Bluetooth、セルのデータが完全に削除されます。設定には影響しません。この操作は元に戻せません。</string>

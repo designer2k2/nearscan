@@ -55,6 +55,8 @@ class MqttPublisher @Inject constructor(
                     append(",\"rssi\":").append(entity.rssi)
                     append(",\"device_class\":").append(entity.deviceClass)
                     append(",\"is_ble\":").append(entity.isBle)
+                    entity.serviceUuids?.let { append(",\"service_uuids\":").append(jsonStr(it)) }
+                    entity.manufacturerData?.let { append(",\"manufacturer_data\":").append(jsonStr(it)) }
                     appendExtras(extras)
                     append("}")
                 }

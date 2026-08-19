@@ -88,4 +88,9 @@ class NearScanSettingsTest {
     fun `default export format is WIGLE_CSV`() {
         assertEquals(ExportFormat.WIGLE_CSV, NearScanSettings().exportFormat)
     }
+
+    @Test
+    fun `captureBleAdvertisingData defaults to true`() {
+        assertTrue(NearScanSettings().captureBleAdvertisingData)
+    }
 }

@@ -53,6 +53,7 @@ class SettingsDataStore @Inject constructor(
         val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
         val DEDUP = booleanPreferencesKey("dedup_enabled")
         val BATTERY_OPT_PROMPT_SHOWN = booleanPreferencesKey("battery_opt_prompt_shown")
+        val CAPTURE_BLE_ADV_DATA = booleanPreferencesKey("capture_ble_advertising_data")
 
         // Deliberately outside NearScanSettings/update(): this tracks whether a scan session is
         // still logically active across process death, not a user-facing setting, so it must
@@ -98,6 +99,7 @@ class SettingsDataStore @Inject constructor(
             keepScreenOn = p[Keys.KEEP_SCREEN_ON] ?: defaults.keepScreenOn,
             dedupEnabled = p[Keys.DEDUP] ?: defaults.dedupEnabled,
             batteryOptPromptShown = p[Keys.BATTERY_OPT_PROMPT_SHOWN] ?: defaults.batteryOptPromptShown,
+            captureBleAdvertisingData = p[Keys.CAPTURE_BLE_ADV_DATA] ?: defaults.captureBleAdvertisingData,
             extraBatteryLevel = p[Keys.EX_BATT_LEVEL] ?: defaults.extraBatteryLevel,
             extraBatteryCharging = p[Keys.EX_BATT_CHARGING] ?: defaults.extraBatteryCharging,
             extraBatteryTemp = p[Keys.EX_BATT_TEMP] ?: defaults.extraBatteryTemp,
@@ -171,6 +173,7 @@ class SettingsDataStore @Inject constructor(
             p[Keys.KEEP_SCREEN_ON] = settings.keepScreenOn
             p[Keys.DEDUP] = settings.dedupEnabled
             p[Keys.BATTERY_OPT_PROMPT_SHOWN] = settings.batteryOptPromptShown
+            p[Keys.CAPTURE_BLE_ADV_DATA] = settings.captureBleAdvertisingData
             p[Keys.EX_BATT_LEVEL] = settings.extraBatteryLevel
             p[Keys.EX_BATT_CHARGING] = settings.extraBatteryCharging
             p[Keys.EX_BATT_TEMP] = settings.extraBatteryTemp

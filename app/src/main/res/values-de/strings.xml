@@ -27,6 +27,7 @@
     <string name="mqtt_topic">Thema</string>
     <string name="keep_screen_on">Bildschirm anlassen</string>
     <string name="dedup">Deduplizieren</string>
+    <string name="capture_ble_advertising_data">BLE-Werbedaten erfassen</string>
     <string name="clear_data">Daten löschen</string>
     <string name="clear_data_title">Alle Scan-Daten löschen?</string>
     <string name="clear_data_message">Dies löscht dauerhaft jeden erfassten WLAN-, Bluetooth- und Mobilfunk-Datensatz. Einstellungen sind davon nicht betroffen. Dies kann nicht rückgängig gemacht werden.</string>

@@ -54,6 +54,10 @@ data class NearScanSettings(
     val dedupEnabled: Boolean = false,
     val batteryOptPromptShown: Boolean = false,
 
+    // BLE advertising data (service UUIDs + manufacturer-specific data) capture, used to
+    // fingerprint device models (e.g. wearables) that don't broadcast a recognizable name.
+    val captureBleAdvertisingData: Boolean = true,
+
     // Extra logged fields
     val extraBatteryLevel: Boolean = false,
     val extraBatteryCharging: Boolean = false,

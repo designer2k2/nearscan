@@ -27,6 +27,7 @@
     <string name="mqtt_topic">विषय</string>
     <string name="keep_screen_on">स्क्रीन चालू रखें</string>
     <string name="dedup">डुप्लीकेट हटाएं</string>
+    <string name="capture_ble_advertising_data">BLE विज्ञापन डेटा कैप्चर करें</string>
     <string name="clear_data">डेटा साफ़ करें</string>
     <string name="clear_data_title">सभी स्कैन डेटा साफ़ करें?</string>
     <string name="clear_data_message">यह हर लॉग किए गए WiFi, ब्लूटूथ और सेल रिकॉर्ड को स्थायी रूप से हटा देता है। सेटिंग्स प्रभावित नहीं होतीं। इसे पूर्ववत नहीं किया जा सकता।</string>

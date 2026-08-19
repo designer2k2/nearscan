@@ -70,7 +70,9 @@ It is **not affiliated with WiGLE** but exports a WiGLE-compatible CSV by defaul
 
 ### Foreground Service
 - Runs as Android Foreground Service with persistent notification
-- Notification shows: status (running/idle), counts, current interval
+- Notification shows: status (running/idle), counts, current interval; tapping it opens the app,
+  and it carries a **Stop** action button that fires `ACTION_STOP` directly (`PendingIntent.getService`)
+  without needing to open the app first
 - Survives screen-off; requests exemption from battery optimization / Doze on first launch via
   `Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (`MainActivity.requestBatteryOptimizationExemption()`),
   gated on a persisted `batteryOptPromptShown` flag so it only ever prompts once

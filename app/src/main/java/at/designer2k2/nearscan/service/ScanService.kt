@@ -389,18 +389,24 @@ class ScanService : Service() {
         val durationS = if (s.sessionStartMs > 0L) (System.currentTimeMillis() - s.sessionStartMs) / 1000L else 0L
         jobs.forEach { it.cancel() }
         jobs.clear()
-        // Fire-and-forget on the service's own scope (not cancelled by the jobs.clear() above):
-        // this is the only place a session is marked inactive, so a later START_STICKY restart
-        // correctly treats itself as fresh rather than resuming a session the user already ended.
-        scope.launch(Dispatchers.IO) { runCatching { settingsDataStore.markSessionInactive() } }
         runCatching { mqttClient.disconnect() }
         taskerBroadcaster.onScanStopped(s.wifiCount, s.btCount, s.cellCount, durationS)
         taskerBroadcaster.reset()
         dedupTracker.reset()
-        status.update { ScanStatus() }
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        releaseWakeLock()
-        stopSelf()
+        // markSessionInactive() must complete *before* status flips isRunning to false: MainViewModel
+        // treats (sessionActive=true, isRunning=false) as an OS-killed/crashed session and shows an
+        // "interrupted session" dialog. Flipping isRunning first (formerly done synchronously here,
+        // with the DataStore write fired off separately) left a real window — often visible as the
+        // dialog flashing on screen for a moment on every ordinary Stop — where that combination was
+        // briefly true. Not cancelled by the jobs.clear() above since it runs on the service's own
+        // scope, not a tracked job.
+        scope.launch(Dispatchers.IO) {
+            runCatching { settingsDataStore.markSessionInactive() }
+            status.update { ScanStatus() }
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            releaseWakeLock()
+            stopSelf()
+        }
     }
 
     private fun startForegroundNotification() {
@@ -422,13 +428,24 @@ class ScanService : Service() {
         }
     }
 
-    private fun buildNotification(contentText: String): Notification =
-        NotificationCompat.Builder(this, CHANNEL_ID)
+    private fun buildNotification(contentText: String): Notification {
+        val openAppIntent = packageManager.getLaunchIntentForPackage(packageName)
+        val contentIntent = PendingIntent.getActivity(
+            this, NOTIFICATION_ID, openAppIntent, PendingIntent.FLAG_IMMUTABLE,
+        )
+        val stopIntent = Intent(this, ScanService::class.java).apply { action = ACTION_STOP }
+        val stopPendingIntent = PendingIntent.getService(
+            this, NOTIFICATION_ID, stopIntent, PendingIntent.FLAG_IMMUTABLE,
+        )
+        return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.notification_title))
             .setContentText(contentText)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setOngoing(true)
+            .setContentIntent(contentIntent)
+            .addAction(0, getString(R.string.stop), stopPendingIntent)
             .build()
+    }
 
     /** Refreshes the foreground notification with live per-type counts and elapsed session time. */
     private fun updateNotification() {

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -38,6 +39,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.size
 import at.designer2k2.nearscan.R
@@ -162,22 +165,46 @@ fun AdvancedSettingsCard(
                     )
                     AnimatedVisibility(visible = settings.mqttEnabled) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Local state, not `settings.mqttBroker`/`mqttTopic` directly: every
+                            // keystroke fires an async DataStore write via onSettingsChange, and
+                            // typing faster than that write-then-recompose round-trip completes
+                            // let a stale write land after a newer one and reset the visible field
+                            // mid-edit, corrupting anything typed afterwards. Local state is always
+                            // exactly what was typed; the round-tripped value is still persisted.
+                            var brokerText by remember { mutableStateOf(settings.mqttBroker) }
                             val brokerLabel = stringResource(R.string.mqtt_broker)
                             OutlinedTextField(
-                                value = settings.mqttBroker,
-                                onValueChange = { onSettingsChange(settings.copy(mqttBroker = it)) },
+                                value = brokerText,
+                                onValueChange = {
+                                    brokerText = it
+                                    onSettingsChange(settings.copy(mqttBroker = it))
+                                },
                                 label = { Text(brokerLabel) },
                                 singleLine = true,
+                                // A URI, not prose — Gboard was rewriting "tcp" to "TCP" mid-type.
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Uri,
+                                    autoCorrectEnabled = false,
+                                    capitalization = KeyboardCapitalization.None,
+                                ),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .semantics { contentDescription = brokerLabel },
                             )
+                            var topicText by remember { mutableStateOf(settings.mqttTopic) }
                             val topicLabel = stringResource(R.string.mqtt_topic)
                             OutlinedTextField(
-                                value = settings.mqttTopic,
-                                onValueChange = { onSettingsChange(settings.copy(mqttTopic = it)) },
+                                value = topicText,
+                                onValueChange = {
+                                    topicText = it
+                                    onSettingsChange(settings.copy(mqttTopic = it))
+                                },
                                 label = { Text(topicLabel) },
                                 singleLine = true,
+                                keyboardOptions = KeyboardOptions(
+                                    autoCorrectEnabled = false,
+                                    capitalization = KeyboardCapitalization.None,
+                                ),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .semantics { contentDescription = topicLabel },

@@ -25,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import at.designer2k2.nearscan.R
 import at.designer2k2.nearscan.location.GpsFix
 
@@ -65,29 +67,38 @@ fun LocationDialog(
         title = { Text(stringResource(R.string.set_location)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val latitudeLabel = stringResource(R.string.latitude)
                 OutlinedTextField(
                     value = lat,
                     onValueChange = { lat = it; validationError = null },
-                    label = { Text(stringResource(R.string.latitude)) },
+                    label = { Text(latitudeLabel) },
                     keyboardOptions = decimalKeyboard,
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { contentDescription = latitudeLabel },
                 )
+                val longitudeLabel = stringResource(R.string.longitude)
                 OutlinedTextField(
                     value = lon,
                     onValueChange = { lon = it; validationError = null },
-                    label = { Text(stringResource(R.string.longitude)) },
+                    label = { Text(longitudeLabel) },
                     keyboardOptions = decimalKeyboard,
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { contentDescription = longitudeLabel },
                 )
+                val altitudeLabel = stringResource(R.string.altitude)
                 OutlinedTextField(
                     value = alt,
                     onValueChange = { alt = it },
-                    label = { Text(stringResource(R.string.altitude)) },
+                    label = { Text(altitudeLabel) },
                     keyboardOptions = decimalKeyboard,
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { contentDescription = altitudeLabel },
                 )
                 Row(
                     modifier = Modifier

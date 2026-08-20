@@ -60,6 +60,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import at.designer2k2.nearscan.R
 import at.designer2k2.nearscan.util.RequiredPermissions
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -154,7 +155,14 @@ fun MainScreen(
                         onClick = {
                             advancedExpanded = !advancedExpanded
                             if (advancedExpanded) {
-                                coroutineScope.launch { scrollState.animateScrollTo(scrollState.maxValue) }
+                                // AnimatedVisibility grows the card's layout height over its expand
+                                // transition, so scrollState.maxValue isn't final until that finishes —
+                                // reading it immediately undershoots and leaves the lower controls
+                                // (MQTT fields, Deduplicate, Clear Data) out of reach.
+                                coroutineScope.launch {
+                                    delay(350)
+                                    scrollState.animateScrollTo(scrollState.maxValue)
+                                }
                             }
                         },
                     ) {

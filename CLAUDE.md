@@ -838,9 +838,15 @@ this in a `runVmTest { vm -> ... }` helper that cancels in a `finally` block.
 
 Robo script: `app/robo-script.json`
 
-Covers (in order): set location manually → save, start scan (8 s), stop scan, expand Advanced Settings, toggle BT Classic + BLE switches, cycle export format dropdown (WiGLE CSV → GeoJSON → Custom CSV → WiGLE CSV), enable MQTT + fill broker/topic fields + disable MQTT, toggle Keep screen on + Deduplicate, collapse Advanced Settings, second start/stop cycle, location dialog cancel flow.
+Covers (in order): set location manually → save, start scan (8 s), stop scan, expand Advanced Settings, toggle BT Classic + BLE + Capture BLE advertising data switches, cycle export format dropdown (WiGLE CSV → GeoJSON → Custom CSV → SQLite dump → WiGLE CSV), enable MQTT + fill broker/topic fields + disable MQTT, toggle Keep screen on + Deduplicate, collapse Advanced Settings, second start/stop cycle, location dialog cancel flow.
 
-Element targeting uses `text` and `contentDescription` — no `testTag` annotations required. BT Classic and BLE labels are unambiguous (counter labels are "BT" and "Cell", scan type labels are "BT Classic" and "BLE").
+Element targeting uses `text` and `contentDescription` — no `testTag` annotations required. BT Classic and BLE labels are unambiguous (counter labels are "BT" and "Cell", scan type labels are "BT Classic" and "BLE"); WiFi and Cell scan-type switches are deliberately *not* driven by text click in the script because their labels ("WiFi", "Cell") collide with the counter card labels shown above the fold — leave them out of any future additions too, or target them some other way (e.g. index-based) instead.
+
+Advanced Settings is expanded/collapsed via the top-bar gear icon (`contentDescription = "Settings"`), not by clicking the card's own "Advanced Settings" header text. The gear is pinned in the `TopAppBar` so it's always on-screen and tappable regardless of scroll position, and — critically — only the gear's `onClick` triggers `scrollState.animateScrollTo(scrollState.maxValue)` to bring the lower controls (MQTT fields, Keep screen on, Deduplicate, Clear Data) into view; the card's internal header click does not scroll. Clicking the header text directly works BUT MQTT/Dedup remain out of the script's reach afterward.
+
+All `ScanTypeRow`/`ToggleRow` switches are toggled by clicking their row (label text and switch both live inside a `Modifier.toggleable(...)` on the row — the `Switch` itself has `onCheckedChange = null` and is purely visual). Do not click the `Switch` directly by className/index; it doesn't own the click handler.
+
+The Latitude/Longitude/Altitude/Broker/Topic `OutlinedTextField`s each carry an explicit `Modifier.semantics { contentDescription = ... }` matching their label text — Compose does not expose an `OutlinedTextField`'s `label` composable as the field's accessible name automatically, so without this the fields are unreachable by both Robo and TalkBack.
 
 Firebase Test Lab auto-grants all manifest permissions — the foreground service will actually start on test devices.
 

@@ -70,12 +70,12 @@
   {
     "eventType": "VIEW_CLICKED",
     "elementDescriptors": [
-      { "text": "Advanced Settings" }
+      { "contentDescription": "Settings" }
     ]
   },
   {
     "eventType": "WAIT",
-    "delayTime": 600
+    "delayTime": 800
   },
 
   {
@@ -113,6 +113,27 @@
     "eventType": "VIEW_CLICKED",
     "elementDescriptors": [
       { "text": "BLE" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 300
+  },
+
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "Capture BLE advertising data" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 300
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "Capture BLE advertising data" }
     ]
   },
   {
@@ -164,6 +185,26 @@
     "eventType": "VIEW_CLICKED",
     "elementDescriptors": [
       { "text": "Custom CSV" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 500
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "SQLite dump" }
+    ]
+  },
+  {
+    "eventType": "WAIT",
+    "delayTime": 500
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      { "text": "SQLite dump" }
     ]
   },
   {
@@ -248,7 +289,7 @@
   {
     "eventType": "VIEW_CLICKED",
     "elementDescriptors": [
-      { "text": "Advanced Settings" }
+      { "contentDescription": "Settings" }
     ]
   },
   {

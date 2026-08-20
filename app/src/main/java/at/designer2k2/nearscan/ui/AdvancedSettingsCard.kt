@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -33,6 +34,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.size
@@ -158,19 +162,25 @@ fun AdvancedSettingsCard(
                     )
                     AnimatedVisibility(visible = settings.mqttEnabled) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            val brokerLabel = stringResource(R.string.mqtt_broker)
                             OutlinedTextField(
                                 value = settings.mqttBroker,
                                 onValueChange = { onSettingsChange(settings.copy(mqttBroker = it)) },
-                                label = { Text(stringResource(R.string.mqtt_broker)) },
+                                label = { Text(brokerLabel) },
                                 singleLine = true,
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .semantics { contentDescription = brokerLabel },
                             )
+                            val topicLabel = stringResource(R.string.mqtt_topic)
                             OutlinedTextField(
                                 value = settings.mqttTopic,
                                 onValueChange = { onSettingsChange(settings.copy(mqttTopic = it)) },
-                                label = { Text(stringResource(R.string.mqtt_topic)) },
+                                label = { Text(topicLabel) },
                                 singleLine = true,
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .semantics { contentDescription = topicLabel },
                             )
                         }
                     }
@@ -235,7 +245,9 @@ private fun ScanTypeRow(
 ) {
     Column {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(value = enabled, role = Role.Switch, onValueChange = onEnabledChange),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -244,7 +256,7 @@ private fun ScanTypeRow(
                 Text(text = "${intervalSec}s")
                 Switch(
                     checked = enabled,
-                    onCheckedChange = onEnabledChange,
+                    onCheckedChange = null,
                     modifier = Modifier.padding(start = 8.dp),
                 )
             }
@@ -412,12 +424,14 @@ private fun ToggleRow(
     onChange: (Boolean) -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(text = label)
-        Switch(checked = checked, onCheckedChange = onChange)
+        Switch(checked = checked, onCheckedChange = null)
     }
 }
 

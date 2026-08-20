@@ -20,7 +20,7 @@ open format. Additional export formats are supported.
   elapsed time, and holds a wake lock so scanning keeps running with the screen off
 - **Battery-optimization exemption prompt** so Android's Doze mode doesn't suspend long sessions
 - **Export formats**: WiGLE CSV, Custom CSV (full schema incl. optional extra fields), GeoJSON,
-  raw SQLite dump
+  raw SQLite dump — all gzip-compressed automatically
 - **MQTT publishing** — stream results live to a broker (e.g. for Home Assistant / Grafana)
 - **Optional extra fields**: battery level/charging/temperature, screen state, network state,
   compass heading/tilt, scan duration, available memory

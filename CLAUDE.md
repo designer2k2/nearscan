@@ -202,8 +202,8 @@ Cell towers change slowly enough to keep a 300s ceiling.
   required). On success, opens the Android share sheet (`ACTION_SEND` chooser) with the exported
   file attached via a `FileProvider` (authority `at.designer2k2.nearscan.fileprovider`, paths
   declared in `res/xml/file_paths.xml`) — lets the user immediately share the export by email,
-  messenger, etc., matching `ExportFormat.mimeType` (`text/csv` / `application/geo+json` /
-  `application/vnd.sqlite3`). Falls back to a Snackbar if the share sheet can't be launched (e.g.
+  messenger, etc., matching `ExportFormat.mimeType` (`application/gzip` for every format — see
+  Export Formats below). Falls back to a Snackbar if the share sheet can't be launched (e.g.
   a user-typed `outputFolder` path outside the declared FileProvider paths) or on export failure.
   This is the only in-app export trigger besides the Tasker `CMD_EXPORT` broadcast (which does not
   share — it's meant for headless automation).
@@ -246,6 +246,12 @@ Cell towers change slowly enough to keep a 300s ceiling.
 ---
 
 ## Export Formats
+
+All four file formats below are gzip-compressed by `ExportManager.export()` after being written
+(`<name>.gz`, e.g. `nearscan_wigle_<ts>.csv.gz`) — text formats compress well and sessions can
+build up a lot of rows within the 30-day retention window. `ExportFormat.mimeType` is
+`application/gzip` for every format, reflecting the actual shared/attached file, not the
+uncompressed content type. WiGLE CSV in particular matches the format WiGLE's own app uploads in.
 
 ### 1. WiGLE CSV (default)
 Standard WiGLE format. Fixed schema — extra fields not included.

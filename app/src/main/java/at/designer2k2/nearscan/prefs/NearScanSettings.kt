@@ -1,11 +1,16 @@
 package at.designer2k2.nearscan.prefs
 
-/** Export format options, persisted as the string in [ExportFormat.key]. */
+/**
+ * Export format options, persisted as the string in [ExportFormat.key]. [ExportManager] gzips
+ * every exported file regardless of format (they're all text or a growable SQLite dump, and
+ * compress well), so [mimeType] reflects the gzip wrapper actually shared/attached, not the
+ * uncompressed content type.
+ */
 enum class ExportFormat(val key: String, val label: String, val mimeType: String) {
-    WIGLE_CSV("wigle_csv", "WiGLE CSV", "text/csv"),
-    CUSTOM_CSV("custom_csv", "Custom CSV", "text/csv"),
-    GEOJSON("geojson", "GeoJSON", "application/geo+json"),
-    SQLITE("sqlite", "SQLite dump", "application/vnd.sqlite3");
+    WIGLE_CSV("wigle_csv", "WiGLE CSV", "application/gzip"),
+    CUSTOM_CSV("custom_csv", "Custom CSV", "application/gzip"),
+    GEOJSON("geojson", "GeoJSON", "application/gzip"),
+    SQLITE("sqlite", "SQLite dump", "application/gzip");
 
     companion object {
         fun fromKey(key: String?): ExportFormat =

@@ -184,7 +184,7 @@ class MainViewModelTest {
         assertEquals(true, result?.success)
         assertEquals("nearscan_wigle_123.csv", result?.message)
         assertEquals(exportedFile.absolutePath, result?.filePath)
-        assertEquals("text/csv", result?.mimeType)
+        assertEquals("application/gzip", result?.mimeType)
         assertFalse(vm.uiState.value.isExporting)
     }
 

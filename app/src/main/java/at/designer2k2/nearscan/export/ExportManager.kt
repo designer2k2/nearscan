@@ -9,6 +9,7 @@ import at.designer2k2.nearscan.prefs.ExportFormat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import java.io.File
+import java.util.zip.GZIPOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,13 +24,25 @@ class ExportManager @Inject constructor(
     private val btScanDao: BtScanDao,
     private val cellScanDao: CellScanDao,
 ) {
+    /** Generates the requested format, then gzips it — all formats compress well and sessions can get large. */
     suspend fun export(format: ExportFormat, outputDir: File): File {
-        return when (format) {
+        val file = when (format) {
             ExportFormat.WIGLE_CSV -> wigleCsvExporter.export(outputDir)
             ExportFormat.CUSTOM_CSV -> customCsvExporter.export(outputDir)
             ExportFormat.GEOJSON -> geoJsonExporter.export(outputDir)
             ExportFormat.SQLITE -> exportSqlite(outputDir)
         }
+        return gzip(file)
+    }
+
+    /** Compresses [source] to a sibling `<name>.gz` file and deletes the uncompressed original. */
+    private fun gzip(source: File): File {
+        val target = File(source.parentFile, "${source.name}.gz")
+        GZIPOutputStream(target.outputStream()).use { gz ->
+            source.inputStream().use { input -> input.copyTo(gz) }
+        }
+        source.delete()
+        return target
     }
 
     /**

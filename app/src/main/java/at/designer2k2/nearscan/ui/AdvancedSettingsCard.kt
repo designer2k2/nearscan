@@ -20,6 +20,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -34,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -134,6 +136,8 @@ fun AdvancedSettingsCard(
                         onIntervalChange = { onSettingsChange(settings.copy(intervalCellSec = it)) },
                     )
 
+                    HorizontalDivider()
+
                     ExportFormatDropdown(
                         selected = settings.exportFormat,
                         onSelected = { onSettingsChange(settings.copy(exportFormat = it)) },
@@ -146,7 +150,9 @@ fun AdvancedSettingsCard(
                     Button(
                         onClick = onExportNow,
                         enabled = !isExporting,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag(EXPORT_ACTION_TEST_TAG),
                     ) {
                         if (isExporting) {
                             CircularProgressIndicator(
@@ -157,6 +163,8 @@ fun AdvancedSettingsCard(
                             Text(stringResource(R.string.export_now))
                         }
                     }
+
+                    HorizontalDivider()
 
                     ToggleRow(
                         label = stringResource(R.string.mqtt_enable),
@@ -212,6 +220,8 @@ fun AdvancedSettingsCard(
                         }
                     }
 
+                    HorizontalDivider()
+
                     ToggleRow(
                         label = stringResource(R.string.keep_screen_on),
                         checked = settings.keepScreenOn,
@@ -223,7 +233,11 @@ fun AdvancedSettingsCard(
                         onChange = { onSettingsChange(settings.copy(dedupEnabled = it)) },
                     )
 
+                    HorizontalDivider()
+
                     ExtraFieldsSection(settings = settings, onSettingsChange = onSettingsChange)
+
+                    HorizontalDivider()
 
                     Button(
                         onClick = { showClearConfirm = true },

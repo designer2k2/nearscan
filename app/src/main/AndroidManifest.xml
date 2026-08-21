@@ -43,8 +43,9 @@
 
     <!--
         Exempt from Doze/App Standby so the foreground scan service survives hours/days
-        stationary — the core use case of the app. One-time user-facing prompt on first launch;
-        see MainActivity.requestBatteryOptimizationExemption().
+        stationary — the core use case of the app. User-triggered only, via the
+        BatteryOptimizationBanner in MainScreen — never requested automatically on launch
+        (that used to happen and stole focus from the app's first frame, breaking Robo tests).
     -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 

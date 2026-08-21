@@ -73,9 +73,10 @@ It is **not affiliated with WiGLE** but exports a WiGLE-compatible CSV by defaul
 - Notification shows: status (running/idle), counts, current interval; tapping it opens the app,
   and it carries a **Stop** action button that fires `ACTION_STOP` directly (`PendingIntent.getService`)
   without needing to open the app first
-- Survives screen-off; requests exemption from battery optimization / Doze on first launch via
-  `Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (`MainActivity.requestBatteryOptimizationExemption()`),
-  gated on a persisted `batteryOptPromptShown` flag so it only ever prompts once
+- Survives screen-off; battery-optimization exemption is requested only when the user taps the
+  `BatteryOptimizationBanner` on the main screen (`Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`),
+  never automatically on launch — an earlier version auto-fired this on first launch, which stole
+  focus from the app's first frame and broke the Robo test's very first scripted click (fixed 2026-08-20)
 - Does NOT use WorkManager — continuous scanning requires a real foreground service
 
 ---
@@ -582,7 +583,6 @@ mqtt_broker               (string)
 mqtt_topic                (string, default "nearscan/data")
 keep_screen_on            (boolean, default false)
 dedup_enabled             (boolean, default false)
-battery_opt_prompt_shown  (boolean, default false)  -- gates the one-time Doze-exemption prompt
 capture_ble_advertising_data (boolean, default true)  -- BLE service UUIDs + manufacturer data
 extra_battery_level       (boolean, default false)
 extra_battery_charging    (boolean, default false)

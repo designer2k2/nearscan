@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,9 +61,20 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import at.designer2k2.nearscan.R
 import at.designer2k2.nearscan.util.RequiredPermissions
+import at.designer2k2.nearscan.util.TestLab
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
+
+/**
+ * Shared test tag for both export/share triggers (this screen's top-bar icon and
+ * [AdvancedSettingsCard]'s "Export Now" button) — resolved to a `resource-id` for UI Automator via
+ * `testTagsAsResourceId` on the root [androidx.compose.material3.Surface] in `MainActivity`. Pass
+ * `--robo-directives ignore:$EXPORT_ACTION_TEST_TAG` (or the equivalent Firebase console field) to
+ * keep Robo's autonomous crawler from tapping into a real Android share sheet, which has stalled
+ * test runs by wandering into Quick Share's account-registration flow.
+ */
+const val EXPORT_ACTION_TEST_TAG = "export_action"
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -106,7 +118,9 @@ fun MainScreen(
 
     LaunchedEffect(state.exportResult) {
         state.exportResult?.let { result ->
-            val shared = result.success && result.filePath != null && runCatching {
+            val shared = result.success && result.filePath != null &&
+                !TestLab.isRunning(context) &&
+                runCatching {
                 val uri = FileProvider.getUriForFile(
                     context,
                     "${context.packageName}.fileprovider",
@@ -141,6 +155,7 @@ fun MainScreen(
                     IconButton(
                         onClick = viewModel::exportNow,
                         enabled = !state.isExporting,
+                        modifier = Modifier.testTag(EXPORT_ACTION_TEST_TAG),
                     ) {
                         if (state.isExporting) {
                             CircularProgressIndicator(modifier = Modifier.size(20.dp))

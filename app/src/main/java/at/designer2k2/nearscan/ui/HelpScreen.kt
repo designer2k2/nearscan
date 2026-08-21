@@ -84,6 +84,12 @@ fun HelpScreen(onBack: () -> Unit) {
             }
             item {
                 HelpSection(
+                    title = stringResource(R.string.help_section_storage),
+                    body = stringResource(R.string.help_storage_body),
+                )
+            }
+            item {
+                HelpSection(
                     title = stringResource(R.string.help_section_battery),
                     body = stringResource(R.string.help_battery_body),
                 )

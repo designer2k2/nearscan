@@ -73,6 +73,8 @@
     <string name="help_scan_types_body">Open the settings (gear) panel to enable or disable WiFi, Bluetooth, BLE, and Cell scanning independently and set how often each one runs. WiFi can also be filtered by minimum signal strength and by band (2.4/5/6 GHz).</string>
     <string name="help_section_export">Exporting your data</string>
     <string name="help_export_body">Tap the share icon in the top bar to export your scan history (WiGLE CSV, custom CSV, GeoJSON, or SQLite) and send it by mail, messenger, or cloud storage from the share sheet. Turn on auto-export in settings to export on a fixed interval automatically.</string>
+    <string name="help_section_storage">Data retention</string>
+    <string name="help_storage_body">Scan results are stored locally on your device. Records older than 30 days are automatically deleted each time you start a new scan session, so the database doesn\'t grow indefinitely — export anything you want to keep before then.</string>
     <string name="help_section_battery">Keeping it running</string>
     <string name="help_battery_body">For long or multi-day sessions, allow NearScan to ignore battery optimization when prompted — otherwise Android\'s Doze mode can pause scanning while the phone is stationary with the screen off.</string>
     <string name="help_section_tasker">Tasker / automation</string>

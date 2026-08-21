@@ -73,6 +73,8 @@
     <string name="help_scan_types_body">Ouvrez le panneau des paramètres (roue dentée) pour activer ou désactiver indépendamment les analyses WiFi, Bluetooth, BLE et cellulaire, et définir leur fréquence. Le WiFi peut aussi être filtré par force de signal minimale et par bande (2,4/5/6 GHz).</string>
     <string name="help_section_export">Exporter vos données</string>
     <string name="help_export_body">Appuyez sur l\'icône de partage dans la barre supérieure pour exporter votre historique d\'analyse (WiGLE CSV, CSV personnalisé, GeoJSON ou SQLite) et l\'envoyer par e-mail, messagerie ou stockage cloud depuis la fenêtre de partage. Activez l\'export automatique dans les paramètres pour exporter à intervalle régulier.</string>
+    <string name="help_section_storage">Conservation des données</string>
+    <string name="help_storage_body">Les résultats des analyses sont stockés localement sur votre appareil. Les enregistrements de plus de 30 jours sont automatiquement supprimés à chaque démarrage d\'une nouvelle session d\'analyse, afin d\'éviter que la base de données ne grossisse indéfiniment. Exportez au préalable tout ce que vous souhaitez conserver.</string>
     <string name="help_section_battery">Le garder actif</string>
     <string name="help_battery_body">Pour les sessions longues ou de plusieurs jours, autorisez NearScan à ignorer l\'optimisation de la batterie lorsque demandé — sinon le mode Doze d\'Android peut suspendre l\'analyse quand le téléphone est immobile et l\'écran éteint.</string>
     <string name="help_section_tasker">Tasker / automatisation</string>

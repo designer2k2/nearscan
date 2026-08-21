@@ -73,6 +73,8 @@
     <string name="help_scan_types_body">打开设置（齿轮）面板，可独立启用或禁用 WiFi、蓝牙、BLE 和基站扫描，并设置各自的扫描频率。WiFi 还可按最小信号强度和频段（2.4/5/6 GHz）进行过滤。</string>
     <string name="help_section_export">导出数据</string>
     <string name="help_export_body">点击顶部栏的分享图标以导出扫描记录（WiGLE CSV、自定义 CSV、GeoJSON 或 SQLite），并通过分享面板发送到邮件、通讯软件或云存储。在设置中开启自动导出，可按固定间隔自动导出。</string>
+    <string name="help_section_storage">数据保留</string>
+    <string name="help_storage_body">扫描结果保存在设备本地。每次开始新的扫描会话时，超过 30 天的记录会自动删除，以防数据库无限增长——请提前导出您想保留的数据。</string>
     <string name="help_section_battery">保持运行</string>
     <string name="help_battery_body">对于长时间或多日会话，请在系统提示时允许 NearScan 忽略电池优化——否则当手机静止且屏幕关闭时，Android 的 Doze 模式可能会暂停扫描。</string>
     <string name="help_section_tasker">Tasker / 自动化</string>

@@ -73,6 +73,8 @@
     <string name="help_scan_types_body">設定（歯車）パネルを開いて、WiFi、Bluetooth、BLE、セルスキャンをそれぞれ個別に有効/無効にし、実行間隔を設定できます。WiFiは最小信号強度とバンド（2.4/5/6 GHz）でもフィルタできます。</string>
     <string name="help_section_export">データのエクスポート</string>
     <string name="help_export_body">上部バーの共有アイコンをタップしてスキャン履歴（WiGLE CSV、カスタムCSV、GeoJSON、SQLite）をエクスポートし、共有シートからメール、メッセンジャー、クラウドストレージへ送信できます。設定で自動エクスポートを有効にすると、一定間隔で自動的にエクスポートされます。</string>
+    <string name="help_section_storage">データの保存期間</string>
+    <string name="help_storage_body">スキャン結果はデバイスにローカルに保存されます。新しいスキャンセッションを開始するたびに、30日より古い記録は自動的に削除され、データベースが際限なく大きくならないようになっています。保持したいデータは事前にエクスポートしてください。</string>
     <string name="help_section_battery">動作を維持する</string>
     <string name="help_battery_body">長時間または複数日のセッションでは、表示されたらNearScanにバッテリー最適化の除外を許可してください — そうしないと、スマホが静止し画面がオフの間にAndroidのDozeモードがスキャンを一時停止することがあります。</string>
     <string name="help_section_tasker">Tasker / 自動化</string>

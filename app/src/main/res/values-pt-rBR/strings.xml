@@ -73,6 +73,8 @@
     <string name="help_scan_types_body">Abra o painel de configurações (engrenagem) para ativar ou desativar independentemente o escaneamento de WiFi, Bluetooth, BLE e Célula, e definir a frequência de cada um. O WiFi também pode ser filtrado por força mínima de sinal e por banda (2,4/5/6 GHz).</string>
     <string name="help_section_export">Exportando seus dados</string>
     <string name="help_export_body">Toque no ícone de compartilhamento na barra superior para exportar seu histórico de escaneamento (WiGLE CSV, CSV personalizado, GeoJSON ou SQLite) e enviá-lo por e-mail, mensageiro ou armazenamento em nuvem pela tela de compartilhamento. Ative a exportação automática nas configurações para exportar em um intervalo fixo automaticamente.</string>
+    <string name="help_section_storage">Retenção de dados</string>
+    <string name="help_storage_body">Os resultados dos escaneamentos são armazenados localmente no seu dispositivo. Registros com mais de 30 dias são excluídos automaticamente sempre que você inicia uma nova sessão de escaneamento, para que o banco de dados não cresça indefinidamente — exporte antes o que quiser manter.</string>
     <string name="help_section_battery">Mantendo-o em execução</string>
     <string name="help_battery_body">Para sessões longas ou de vários dias, permita que o NearScan ignore a otimização de bateria quando solicitado — caso contrário, o modo Doze do Android pode pausar o escaneamento enquanto o telefone estiver parado com a tela desligada.</string>
     <string name="help_section_tasker">Tasker / automação</string>

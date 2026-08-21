@@ -73,6 +73,8 @@
     <string name="help_scan_types_body">Öffne das Einstellungen-Panel (Zahnrad), um WLAN-, Bluetooth-, BLE- und Mobilfunk-Scans unabhängig voneinander zu aktivieren oder zu deaktivieren und die jeweilige Häufigkeit festzulegen. WLAN kann zusätzlich nach minimaler Signalstärke und Band (2,4/5/6 GHz) gefiltert werden.</string>
     <string name="help_section_export">Daten exportieren</string>
     <string name="help_export_body">Tippe auf das Teilen-Symbol in der oberen Leiste, um deinen Scan-Verlauf zu exportieren (WiGLE CSV, benutzerdefiniertes CSV, GeoJSON oder SQLite) und über den Teilen-Dialog per Mail, Messenger oder Cloud-Speicher zu senden. Aktiviere den Auto-Export in den Einstellungen, um automatisch in festen Abständen zu exportieren.</string>
+    <string name="help_section_storage">Datenaufbewahrung</string>
+    <string name="help_storage_body">Scan-Ergebnisse werden lokal auf deinem Gerät gespeichert. Bei jedem Start einer neuen Scan-Sitzung werden Datensätze, die älter als 30 Tage sind, automatisch gelöscht, damit die Datenbank nicht unbegrenzt wächst – exportiere vorher alles, was du behalten möchtest.</string>
     <string name="help_section_battery">Am Laufen halten</string>
     <string name="help_battery_body">Erlaube NearScan bei langen oder mehrtägigen Sitzungen, die Akku-Optimierung zu ignorieren, wenn du gefragt wirst — sonst kann Androids Doze-Modus das Scannen pausieren, während das Telefon stillsteht und der Bildschirm aus ist.</string>
     <string name="help_section_tasker">Tasker / Automatisierung</string>

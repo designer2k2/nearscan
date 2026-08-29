@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NearScan Privacy Policy</title>
+<style>
+  :root {
+    --bg: #f5f7fa;
+    --surface: #ffffff;
+    --surface-2: #edf1f5;
+    --ink: #0d1b2a;
+    --ink-soft: #40536a;
+    --ink-faint: #7c8ca0;
+    --accent: #007a94;
+    --accent-soft: #e3f6fa;
+    --line: #dce3ea;
+    --radar-cyan: #00e5ff;
+    --radar-bg: #0d1b2a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b141f;
+      --surface: #0d1b2a;
+      --surface-2: #142433;
+      --ink: #eaf2f8;
+      --ink-soft: #a9bacc;
+      --ink-faint: #6e8298;
+      --accent: #00e5ff;
+      --accent-soft: #103642;
+      --line: #223347;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b141f;
+    --surface: #0d1b2a;
+    --surface-2: #142433;
+    --ink: #eaf2f8;
+    --ink-soft: #a9bacc;
+    --ink-faint: #6e8298;
+    --accent: #00e5ff;
+    --accent-soft: #103642;
+    --line: #223347;
+  }
+
+  * { box-sizing: border-box; }
+  html { color-scheme: light dark; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink-soft);
+    font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+    font-size: 1.05rem;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  .sans { font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif; }
+  .mono { font-family: ui-monospace, "Cascadia Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace; }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+  .page {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 5vw, 3.5rem) clamp(1.25rem, 5vw, 1.5rem) 5rem;
+  }
+
+  header.hero {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    margin-bottom: 2.25rem;
+  }
+  .radar-mark {
+    flex: none;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 50%;
+    background: var(--radar-bg);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px var(--line);
+  }
+  .radar-mark::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 5px, rgba(0,229,255,0.14) 6px);
+  }
+  .radar-mark::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: conic-gradient(from 0deg, rgba(0,229,255,0.85), rgba(0,229,255,0) 28%, transparent 60%);
+    animation: sweep 4s linear infinite;
+    transform-origin: 50% 50%;
+  }
+  .radar-mark i {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 4px 1px rgba(255,255,255,0.8);
+  }
+  .radar-mark i:nth-child(1) { top: 20%; left: 62%; animation: blip 4s ease-in-out infinite; }
+  .radar-mark i:nth-child(2) { top: 60%; left: 30%; animation: blip 4s ease-in-out 1.4s infinite; }
+  @keyframes sweep { to { transform: rotate(360deg); } }
+  @keyframes blip { 0%, 100% { opacity: 0; } 8%, 18% { opacity: 1; } 30% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .radar-mark::after, .radar-mark i { animation: none; }
+    .radar-mark i { opacity: 0.6; }
+  }
+
+  .hero-text .eyebrow {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    color: var(--ink-faint);
+    margin-bottom: 0.35rem;
+  }
+  h1 {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 600;
+    font-size: clamp(1.7rem, 4vw, 2.3rem);
+    color: var(--ink);
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.2rem;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    margin: 0 0 2rem;
+  }
+  .meta strong { color: var(--ink-soft); font-weight: 500; }
+
+  .lede {
+    font-size: 1.1rem;
+    color: var(--ink);
+    max-width: 42rem;
+  }
+
+  nav.toc {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin: 2rem 0 2.5rem;
+  }
+  nav.toc .label {
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    color: var(--ink-faint);
+    display: block;
+    margin-bottom: 0.6rem;
+  }
+  nav.toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem 1.5rem;
+  }
+  nav.toc a {
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+  nav.toc a:hover { color: var(--accent); }
+
+  section {
+    padding: 2.25rem 0;
+    border-top: 1px solid var(--line);
+    scroll-margin-top: 1.5rem;
+  }
+  section:first-of-type { border-top: none; padding-top: 0; }
+
+  .tag {
+    display: inline-block;
+    font-family: ui-monospace, "Cascadia Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    margin-bottom: 0.7rem;
+  }
+  h2 {
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 600;
+    font-size: 1.4rem;
+    color: var(--ink);
+    margin: 0 0 0.9rem;
+    text-wrap: balance;
+  }
+  h2 .index { color: var(--ink-faint); font-weight: 500; margin-right: 0.4em; }
+
+  p { margin: 0 0 1rem; max-width: 66ch; }
+  ul.facts, ul.plain {
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+    max-width: 66ch;
+  }
+  ul.facts > li {
+    position: relative;
+    padding-left: 1.3rem;
+    margin-bottom: 0.85rem;
+  }
+  ul.facts > li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  ul.facts strong, ul.plain strong { color: var(--ink); font-weight: 500; }
+  ul.plain { padding-left: 1.2rem; list-style: disc; }
+  ul.plain li { margin-bottom: 0.6rem; }
+  ul.plain::marker, ul.plain li::marker { color: var(--accent); }
+
+  .callout {
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--surface-2);
+    border-left: 3px solid var(--accent);
+    padding: 0.9rem 1.1rem;
+    border-radius: 0 8px 8px 0;
+    margin: 0 0 1.2rem;
+    font-size: 0.98rem;
+  }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    background: var(--surface);
+  }
+  th, td {
+    text-align: left;
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  thead th {
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    background: var(--surface-2);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.perm { font-family: ui-monospace, "Cascadia Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.82rem; color: var(--ink); white-space: nowrap; }
+
+  footer {
+    margin-top: 2.5rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.88rem;
+    color: var(--ink-faint);
+  }
+  footer a { color: var(--ink-soft); }
+  footer p { max-width: none; }
+
+  @media (max-width: 30rem) {
+    nav.toc ol { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="radar-mark" aria-hidden="true"><i></i><i></i></div>
+    <div class="hero-text">
+      <span class="eyebrow sans">NEARSCAN</span>
+      <h1>Privacy Policy</h1>
+    </div>
+  </header>
+
+  <div class="meta mono">
+    <span>Last updated: <strong>2026-08-29</strong></span>
+    <span>Applies to: <strong>at.designer2k2.nearscan</strong></span>
+  </div>
+
+  <p class="lede">
+    NearScan is a local-only RF environment logger. This policy explains exactly what data the
+    app touches, why, and — most importantly — that none of it is sent anywhere. NearScan has no
+    backend server, no analytics SDK, no crash-reporting SDK, and no advertising SDK.
+  </p>
+
+  <nav class="toc" aria-label="Sections in this policy">
+    <span class="label">On this page</span>
+    <ol>
+      <li><a href="#access">What NearScan accesses</a></li>
+      <li><a href="#flow">Where data goes</a></li>
+      <li><a href="#retention">Retention &amp; deletion</a></li>
+      <li><a href="#permissions">Permissions summary</a></li>
+      <li><a href="#children">Children's privacy</a></li>
+      <li><a href="#changes">Changes to this policy</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ol>
+  </nav>
+
+  <section id="access">
+    <span class="tag">ON-DEVICE</span>
+    <h2>What NearScan accesses on your device</h2>
+    <ul class="facts">
+      <li><strong>Location (precise).</strong> You set your location manually, or with a single
+        GPS fix. NearScan does not continuously track your location — the GPS radio is used only
+        for the moment you tap "Get GPS Fix," then turned back off. Every logged WiFi, Bluetooth,
+        or cell record is stamped with whichever location you last set.</li>
+      <li><strong>WiFi networks nearby.</strong> SSID, BSSID, signal strength, channel/band, and
+        security type.</li>
+      <li><strong>Bluetooth devices nearby</strong> (Classic and BLE) — address, name, signal
+        strength, and, optionally, advertised service UUIDs and manufacturer data (toggle in
+        Advanced Settings).</li>
+      <li><strong>Cell tower information.</strong> Carrier codes, cell ID, technology, and signal
+        quality, read via Android's telephony APIs. This requires the READ_PHONE_STATE permission,
+        but NearScan never reads your phone number, device identifiers (IMEI/IMSI), or call
+        state — only cell-tower metadata.</li>
+      <li><strong>Optional device state</strong> (off by default, toggled per field in Advanced
+        Settings) — battery level/charging/temperature, screen-on state, active network type,
+        compass heading/tilt, and available memory. Attached to log records only if you turn each
+        one on.</li>
+    </ul>
+  </section>
+
+  <section id="flow">
+    <span class="tag">DATA FLOW</span>
+    <h2>Where this data goes</h2>
+    <p class="callout">Nowhere, unless you send it yourself. All scan results live in a local
+      database on your device only — NearScan has no server, and couldn't receive your data even
+      if it wanted to.</p>
+    <p>Data leaves your device only when you take an explicit action:</p>
+    <ul class="plain">
+      <li><strong>Export</strong> — you tap the share icon or "Export Now," then choose the
+        destination (email, messaging app, cloud storage) via Android's own share sheet. NearScan
+        does not see or control what happens after you pick a destination.</li>
+      <li><strong>MQTT</strong> (optional, off by default) — if you enable it and enter your own
+        broker address, NearScan streams scan results to that broker. You control this address; it
+        is typically one you run yourself (e.g. for Home Assistant). NearScan's developer never
+        operates or has access to any broker.</li>
+      <li><strong>Tasker / automation integration</strong> (optional) — NearScan exposes a
+        read-only ContentProvider and standard Android broadcasts so automation apps you install
+        (e.g. Tasker) can query your scan data or control the app, entirely on-device, with no
+        network involved.</li>
+    </ul>
+  </section>
+
+  <section id="retention">
+    <span class="tag">RETENTION</span>
+    <h2>Data retention and deletion</h2>
+    <p>Records older than <strong>30 days</strong> are automatically deleted from the local
+      database each time you start a new scan session. You can also delete everything immediately
+      with the "Clear Data" button in Advanced Settings, or by uninstalling the app — there is no
+      server-side copy to separately delete.</p>
+  </section>
+
+  <section id="permissions">
+    <span class="tag">PERMISSIONS</span>
+    <h2>Permissions summary</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Permission</th><th>Why NearScan needs it</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="perm">ACCESS_FINE_LOCATION<br>ACCESS_COARSE_LOCATION</td><td>Required by Android to return WiFi/Bluetooth scan results, and for the single GPS fix feature.</td></tr>
+          <tr><td class="perm">BLUETOOTH_SCAN<br>BLUETOOTH_CONNECT</td><td>Detect nearby Bluetooth Classic and BLE devices.</td></tr>
+          <tr><td class="perm">READ_PHONE_STATE</td><td>Read cell tower info — never your phone number or device identifiers.</td></tr>
+          <tr><td class="perm">FOREGROUND_SERVICE<br>FOREGROUND_SERVICE_LOCATION</td><td>Keep scanning running reliably in the background, including with the screen off; tied to the location you've set.</td></tr>
+          <tr><td class="perm">POST_NOTIFICATIONS</td><td>Show the ongoing scan-session notification (Android 13+).</td></tr>
+          <tr><td class="perm">RECEIVE_BOOT_COMPLETED</td><td>Detect a reboot that ended an active session, to offer resuming it.</td></tr>
+          <tr><td class="perm">WAKE_LOCK</td><td>Keep the CPU awake mid-scan so sessions don't stall with the screen off.</td></tr>
+          <tr><td class="perm">INTERNET</td><td>Used only if you turn on optional MQTT streaming to your own broker.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="children">
+    <span class="tag">AUDIENCE</span>
+    <h2>Children's privacy</h2>
+    <p>NearScan is a general-purpose technical tool, not directed at children, and collects no
+      personal information about any user of any age.</p>
+  </section>
+
+  <section id="changes">
+    <span class="tag">UPDATES</span>
+    <h2>Changes to this policy</h2>
+    <p>If this policy changes, the "Last updated" date at the top will change accordingly.
+      Material changes will also be noted in the app's release notes.</p>
+  </section>
+
+  <section id="contact">
+    <span class="tag">CONTACT</span>
+    <h2>Contact</h2>
+    <p>Questions about this policy or the app: open an issue at
+      <a href="https://github.com/designer2k2/nearscan/issues">github.com/designer2k2/nearscan/issues</a>.</p>
+  </section>
+
+  <footer>
+    <p>NearScan · <span class="mono">at.designer2k2.nearscan</span> · Source on
+      <a href="https://github.com/designer2k2/nearscan">GitHub</a></p>
+  </footer>
+
+</div>
+</body>
+</html>

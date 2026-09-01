@@ -77,7 +77,7 @@ class NearScanContentProvider : ContentProvider() {
         val rows = deps.wifiScanDao().getRecent(limit)
         MatrixCursor(COLS_WIFI).apply {
             rows.forEach { r ->
-                addRow(arrayOf(r.bssid, r.ssid, r.rssi, r.channel, r.latitude, r.longitude, r.timestamp))
+                addRow(arrayOf<Any?>(r.bssid, r.ssid, r.rssi, r.channel, r.latitude, r.longitude, r.timestamp))
             }
         }
     }
@@ -86,7 +86,7 @@ class NearScanContentProvider : ContentProvider() {
         val rows = deps.btScanDao().getRecent(limit)
         MatrixCursor(COLS_BT).apply {
             rows.forEach { r ->
-                addRow(arrayOf(r.address, r.name, r.rssi, r.latitude, r.longitude, r.timestamp))
+                addRow(arrayOf<Any?>(r.address, r.name, r.rssi, r.latitude, r.longitude, r.timestamp))
             }
         }
     }
@@ -95,7 +95,7 @@ class NearScanContentProvider : ContentProvider() {
         val rows = deps.cellScanDao().getRecent(limit)
         MatrixCursor(COLS_CELL).apply {
             rows.forEach { r ->
-                addRow(arrayOf(r.mcc, r.mnc, r.cid, r.rssi, r.technology, r.latitude, r.longitude, r.timestamp))
+                addRow(arrayOf<Any?>(r.mcc, r.mnc, r.cid, r.rssi, r.technology, r.latitude, r.longitude, r.timestamp))
             }
         }
     }
@@ -106,7 +106,7 @@ class NearScanContentProvider : ContentProvider() {
             (System.currentTimeMillis() - s.sessionStartMs) / 1000L else 0L
         val settings = deps.settingsDataStore().settings.first()
         MatrixCursor(COLS_STATS).apply {
-            addRow(arrayOf(
+            addRow(arrayOf<Any?>(
                 if (s.isRunning) 1 else 0,
                 s.wifiCount,
                 s.btCount,

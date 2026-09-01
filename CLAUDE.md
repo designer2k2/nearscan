@@ -23,7 +23,7 @@ It is **not affiliated with WiGLE** but exports a WiGLE-compatible CSV by defaul
 - **Repository:** github.com/designer2k2/nearscan
 - **Language:** Kotlin
 - **Min SDK:** 26 (Android 8.0)
-- **Compile SDK:** 36 · **Target SDK:** 35 · **Min SDK:** 26
+- **Compile SDK:** 36 · **Target SDK:** 36 · **Min SDK:** 26
 - **Kotlin:** 2.3.10 (uses `org.jetbrains.kotlin.plugin.compose` — NOT legacy `composeOptions`)
 - **AGP:** 9.1.0 · **KSP:** 2.3.6 · **Hilt:** 2.57.1 (KSP — kapt is incompatible with Kotlin 2.x)
 - **Gradle:** 9.4.0 (AGP 9.x requires Gradle 9.x)
@@ -36,8 +36,11 @@ It is **not affiliated with WiGLE** but exports a WiGLE-compatible CSV by defaul
   mixed element types in `NearScanContentProvider` (now `arrayOf<Any?>(...)`) and `createTempDir`
   in the export tests (now `kotlin.io.path.createTempDirectory`). `kotlinOptions { jvmTarget }`
   was removed from `build.gradle.kts` — AGP 9 derives it from `compileOptions`.
-- compileSdk was bumped 35 → 36 because core-ktx 1.17 / activity-compose 1.12 require it;
-  targetSdk stays 35 (a separate opt-in, unchanged runtime behavior).
+- compileSdk was bumped 35 → 36 because core-ktx 1.17 / activity-compose 1.12 require it.
+- targetSdk bumped 35 → 36 (2026-09-01) — Play Console now requires new releases to target
+  API 36. No code changes were needed: no `screenOrientation` lock in the manifest (so Android
+  16's large-screen orientation change is a non-issue), and `enableEdgeToEdge()` was already
+  called (edge-to-edge was already enforced at targetSdk 35).
 
 ---
 

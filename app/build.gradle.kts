@@ -25,7 +25,7 @@ android {
     defaultConfig {
         applicationId = "at.designer2k2.nearscan"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
 

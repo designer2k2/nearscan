@@ -23,14 +23,24 @@ It is **not affiliated with WiGLE** but exports a WiGLE-compatible CSV by defaul
 - **Repository:** github.com/designer2k2/nearscan
 - **Language:** Kotlin
 - **Min SDK:** 26 (Android 8.0)
-- **Target SDK / Compile SDK:** 35
-- **Kotlin:** 2.0.21 (uses `org.jetbrains.kotlin.plugin.compose` — NOT legacy `composeOptions`)
-- **AGP:** 8.6.1 · **KSP:** 2.0.21-1.0.28 · **Hilt:** 2.51.1 (KSP — kapt is incompatible with Kotlin 2.x)
-- **Gradle:** 8.7 (AGP 8.6.x requires Gradle 8.7+; bumped from 8.5 alongside the AGP upgrade)
-- Kotlin/KSP/Hilt/Room/Paho versions are deliberately pinned — they're a matched set (KSP version
-  is tied to the exact Kotlin patch; Hilt/Room bumps risk destabilizing without a reason forcing
-  the change). Only AGP + plain library versions (Compose BOM, Lifecycle, DataStore, coroutines,
-  core-ktx, test libs) were bumped — see Dependencies section.
+- **Compile SDK:** 36 · **Target SDK:** 36 · **Min SDK:** 26
+- **Kotlin:** 2.3.10 (uses `org.jetbrains.kotlin.plugin.compose` — NOT legacy `composeOptions`)
+- **AGP:** 9.1.0 · **KSP:** 2.3.6 · **Hilt:** 2.57.1 (KSP — kapt is incompatible with Kotlin 2.x)
+- **Gradle:** 9.4.0 (AGP 9.x requires Gradle 9.x)
+- **AGP 9 opt-outs** in `gradle.properties`: `android.builtInKotlin=false` + `android.newDsl=false`
+  — keep the legacy plugin DSL until Hilt ships a proper AGP 9 built-in-Kotlin-compatible release.
+  Deprecated flags, removed in AGP 10; revisit then.
+- Upgraded 2026-09-01 (from AGP 8.6.1 / Kotlin 2.0.21 / Gradle 8.7) to clear the Play Console
+  "R8 optimization" advisory that asks for AGP 9.0+. This is the same version set MemoryPulse
+  runs. Kotlin 2.3 promoted two deprecations to errors that had to be fixed: `arrayOf(...)` with
+  mixed element types in `NearScanContentProvider` (now `arrayOf<Any?>(...)`) and `createTempDir`
+  in the export tests (now `kotlin.io.path.createTempDirectory`). `kotlinOptions { jvmTarget }`
+  was removed from `build.gradle.kts` — AGP 9 derives it from `compileOptions`.
+- compileSdk was bumped 35 → 36 because core-ktx 1.17 / activity-compose 1.12 require it.
+- targetSdk bumped 35 → 36 (2026-09-01) — Play Console now requires new releases to target
+  API 36. No code changes were needed: no `screenOrientation` lock in the manifest (so Android
+  16's large-screen orientation change is a non-issue), and `enableEdgeToEdge()` was already
+  called (edge-to-edge was already enforced at targetSdk 35).
 
 ---
 
@@ -401,40 +411,39 @@ gcloud firebase test android run \
 
 ```kotlin
 // Compose BOM — pins all Compose library versions together
-implementation(platform("androidx.compose:compose-bom:2024.12.01"))
+implementation(platform("androidx.compose:compose-bom:2026.02.01"))
 implementation("androidx.compose.ui:ui")
 implementation("androidx.compose.ui:ui-tooling-preview")
 implementation("androidx.compose.material3:material3")
-implementation("androidx.activity:activity-compose:1.9.3")
+implementation("androidx.activity:activity-compose:1.12.4")
 debugImplementation("androidx.compose.ui:ui-tooling")
 
 // ViewModel + StateFlow (no LiveData needed)
-implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
 
 // Hilt DI (KSP — NOT kapt; kapt is incompatible with Kotlin 2.x)
-implementation("com.google.dagger:hilt-android:2.51.1")
-ksp("com.google.dagger:hilt-android-compiler:2.51.1")
+implementation("com.google.dagger:hilt-android:2.57.1")
+ksp("com.google.dagger:hilt-android-compiler:2.57.1")
 implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
 // Room (KSP)
-implementation("androidx.room:room-runtime:2.6.1")
-implementation("androidx.room:room-ktx:2.6.1")
-ksp("androidx.room:room-compiler:2.6.1")
+implementation("androidx.room:room-runtime:2.8.4")
+implementation("androidx.room:room-ktx:2.8.4")
+ksp("androidx.room:room-compiler:2.8.4")
 
 // DataStore (replaces SharedPreferences)
-implementation("androidx.datastore:datastore-preferences:1.1.2")
+implementation("androidx.datastore:datastore-preferences:1.2.0")
 
 // Coroutines
-implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
 // MQTT (Eclipse Paho v3 client only — Paho Android Service is deprecated/broken on Android 12+)
 implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
 ```
 
-Kotlin 2.0.21 / KSP 2.0.21-1.0.28 / Hilt 2.51.1 / Room 2.6.1 / Paho 1.2.5 are deliberately left
-pinned (see App Name & Identity section) — only AGP and the plain library versions above were
-bumped in the 2026 dependency refresh.
+Full version set lives in `gradle/libs.versions.toml`; it matches what MemoryPulse runs. Paho is
+the one library still pinned (1.2.5 is the last release — the project is dormant).
 
 ---
 

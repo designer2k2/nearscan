@@ -15,6 +15,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.io.File
+import kotlin.io.path.createTempDirectory
 
 class CustomCsvExporterTest {
 
@@ -26,7 +27,7 @@ class CustomCsvExporterTest {
 
     @Before
     fun setUp() {
-        outputDir = createTempDir(prefix = "custom-test")
+        outputDir = createTempDirectory("custom-test").toFile()
         coEvery { wifiScanDao.getPage(any(), any()) } returns emptyList()
         coEvery { btScanDao.getPage(any(), any()) } returns emptyList()
         coEvery { cellScanDao.getPage(any(), any()) } returns emptyList()

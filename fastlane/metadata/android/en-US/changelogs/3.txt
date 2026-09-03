@@ -1,0 +1,5 @@
+Build modernisation only — no user-facing changes:
+
+* Upgraded to the AGP 9.1 / Gradle 9.4 / Kotlin 2.3 build toolchain
+* Raised targetSdk to 36 (Android 16)
+* Added an MIT LICENSE and rewrote the README for open source, with a full per-permission explainer

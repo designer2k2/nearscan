@@ -1,0 +1,23 @@
+NearScan logs the RF environment around a fixed location — WiFi networks, Bluetooth devices, and cell towers — over long stationary sessions, without draining your battery on continuous GPS.
+
+Set your location once (type it in, or grab a single GPS fix that immediately turns GPS back off), tap START, and NearScan keeps scanning in the background for as long as you need — hours or even days — while stamping every result with that location.
+
+<b>Key features</b>
+
+* Four scan types, independently configurable: WiFi, Bluetooth Classic, Bluetooth LE, and cell towers (GSM/LTE/WCDMA/NR), each with its own interval — change them live, mid-session
+* GPS-free by design — no continuous location polling, ever
+* Runs as a proper foreground service with a persistent notification showing live counts, and holds a wake lock so scanning survives with the screen off
+* WiFi filtering by minimum signal strength and by band (2.4/5/6 GHz)
+* Export to WiGLE-compatible CSV, a full-schema Custom CSV, GeoJSON, or a raw SQLite dump — all gzip-compressed automatically, shareable straight from the export dialog
+* Optional MQTT publishing — stream results live to your own broker (e.g. for Home Assistant or Grafana dashboards)
+* Optional extra fields: battery level/charging/temperature, screen state, network state, compass heading/tilt, scan duration, available memory
+* Deduplication — skip re-logging the same network/device within ±3 dBm of its last value
+* Deep automation support — control NearScan and react to scan events from Tasker, MacroDroid, or any automation app, via standard Android broadcasts and a read-only content provider. No proprietary plugin needed; full reference built into the app
+* Resilient to reboots and OS kills — detects an interrupted session on next launch and offers to resume it
+* 10 languages supported
+
+<b>Privacy</b>
+
+NearScan has no backend server, no analytics, no crash reporting, and no ads. All data stays on your device unless you explicitly export or share it, or configure your own MQTT broker.
+
+NearScan is not affiliated with WiGLE, but exports a WiGLE-compatible CSV by default since it is a well-known open format used by wardriving and site-survey tools.

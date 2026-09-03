@@ -225,15 +225,11 @@ Architecture, module layout, and implementation notes: **[CLAUDE.md](CLAUDE.md)*
 
 ## Contributing
 
-Issues and pull requests are welcome.
+**Everything is welcome** — bug reports, feature ideas, translations, docs fixes, screenshots,
+testing on your device, or code. No CLA, no perfect-PR requirement, first-timers encouraged. If
+you're unsure whether something fits, open an issue and ask, or just open a draft PR.
 
-- Keep PRs focused and small; use [Conventional Commits](https://www.conventionalcommits.org)
-  (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`).
-- Run `./gradlew testDebugUnitTest` before opening a PR.
-- Adding user-facing strings? They need translations across all 10 language files under
-  `app/src/main/res/values-*/`.
-- Found a security or privacy issue? Please open an issue describing the class of problem rather
-  than posting a working exploit.
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the (short, low-friction) details.
 
 ## License
 

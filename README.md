@@ -134,8 +134,9 @@ to allow "install unknown apps" for your browser or file manager.)
 
 **Google Play** — [`at.designer2k2.nearscan`](https://play.google.com/store/apps/details?id=at.designer2k2.nearscan).
 
-**F-Droid** — not yet submitted. The app is FOSS with no proprietary dependencies, so a
-submission is planned.
+**F-Droid** — submission in progress. Fastlane metadata lives in
+[`fastlane/metadata/`](fastlane/metadata/android/en-US); the build recipe and the step-by-step
+process are in [`docs/fdroid/`](docs/fdroid/SUBMISSION.md).
 
 **Build it yourself** — see below.
 

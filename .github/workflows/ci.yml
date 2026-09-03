@@ -60,10 +60,9 @@ jobs:
           if-no-files-found: ignore
 
   lint:
-    name: Android Lint (non-blocking)
+    name: Android Lint
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4

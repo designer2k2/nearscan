@@ -123,6 +123,7 @@ working.
 | `RECEIVE_BOOT_COMPLETED` | Detect that a reboot interrupted an active session, so the app can offer to resume it on next launch. | Nothing is scanned automatically after boot; you're only shown a prompt. |
 | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Let you exempt NearScan from Doze / App Standby so long stationary sessions aren't frozen. | **User-triggered only**, via the banner on the main screen. Never requested automatically. |
 | `INTERNET` | Used **only** if you turn on optional MQTT streaming to a broker you configure. | With MQTT off, the app makes no network connections at all. |
+| `ACCESS_NETWORK_STATE` | Read which transport (WiFi / cellular / none) is currently active, for the optional "mobile data active" and "network type" extra logged fields. | Only read when you enable those extra fields; no connection is made. |
 | `WRITE_EXTERNAL_STORAGE` (`maxSdkVersion="28"`) | Write export files on Android 9 and older, which predate scoped storage. | Not requested on Android 10+. |
 | `at.designer2k2.nearscan.permission.READ_DATA` | A **custom** permission other apps (e.g. Tasker) must hold to query NearScan's read-only data provider. | `normal` protection level — it's a namespace guard, not a security boundary. Granted silently to any app that declares it. |
 

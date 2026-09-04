@@ -1,0 +1,70 @@
+name: Bug report
+description: Something isn't working right
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Fill in what you can — every field is optional except the first.
+        Partial information is still useful.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+      placeholder: |
+        I started a scan with only Cell enabled, expected the Cell counter to climb, but it stayed at 0.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Advanced Settings
+        2. Turn off WiFi / BT / BLE, leave Cell on
+        3. Tap START
+        4. ...
+  - type: input
+    id: device
+    attributes:
+      label: Phone model
+      placeholder: Pixel 7 Pro
+  - type: input
+    id: android-version
+    attributes:
+      label: Android version
+      placeholder: Android 15
+  - type: input
+    id: app-version
+    attributes:
+      label: NearScan version
+      description: From the app, or the APK / store version you installed.
+      placeholder: 0.1.2
+  - type: dropdown
+    id: install-source
+    attributes:
+      label: Where did you install it from?
+      options:
+        - Google Play
+        - GitHub release APK
+        - F-Droid
+        - Built it myself
+        - Not sure
+  - type: input
+    id: scan-types
+    attributes:
+      label: Which scan types were enabled?
+      placeholder: WiFi + Cell
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logcat (optional)
+      description: "`adb logcat | grep -i nearscan` — trim anything you'd rather not share."
+      render: text
+  - type: checkboxes
+    id: screenshots-note
+    attributes:
+      label: Screenshots
+      options:
+        - label: If I attach screenshots, I've blanked out or faked my coordinates.

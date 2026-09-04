@@ -69,6 +69,12 @@ android {
         compose = true
     }
 
+    lint {
+        // Existing findings are recorded in lint-baseline.xml; CI fails only on NEW issues.
+        // Regenerate after intentionally clearing items: ./gradlew updateLintBaseline
+        baseline = file("lint-baseline.xml")
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"

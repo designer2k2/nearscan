@@ -52,6 +52,10 @@
     <!-- MQTT -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Read active-network transport for the optional "mobile data active" / "network type"
+         extra logged fields (ExtraFieldsCollector.readNetwork()). Normal permission. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <!-- Tasker / automation integration: callers need this to query the ContentProvider -->
     <uses-permission android:name="at.designer2k2.nearscan.permission.READ_DATA" />
 

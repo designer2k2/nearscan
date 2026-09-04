@@ -1,0 +1,28 @@
+name: Feature request / idea
+description: Suggest something, however rough
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Rough ideas are welcome. Describe the problem you're trying to solve, not just the
+        solution — it leaves room for a better approach. "Would you accept a PR for X?" is a fine
+        issue too.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      placeholder: I want to feed NearScan data into InfluxDB, but there's no line-protocol export.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What did you have in mind?
+      placeholder: An "InfluxDB Line Protocol" option in the export format dropdown.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check (just so you know)
+      options:
+        - label: I understand this shouldn't add a tracking/analytics component or a required network backend (NearScan is FOSS with no server and stays F-Droid-eligible).

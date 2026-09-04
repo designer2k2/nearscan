@@ -45,6 +45,10 @@ class CellScanner @Inject constructor(
         cellInfo.mapNotNull { info -> info.toEntity(now) }
     }
 
+    // id.mcc / id.mnc (the legacy Int getters used as the pre-API-28 fallback below) are
+    // deprecated in favor of the String getters, but are still the only way to read this
+    // field on Android 8.x (minSdk 26) — see resolveMccOrMnc.
+    @Suppress("DEPRECATION")
     private fun CellInfo.toEntity(now: Long): CellScanEntity? = when (this) {
         is CellInfoGsm -> {
             val id = cellIdentity
@@ -54,8 +58,16 @@ class CellScanner @Inject constructor(
                 latitude = null,
                 longitude = null,
                 altitude = null,
-                mcc = id.mccString?.toIntOrNull(),
-                mnc = id.mncString?.toIntOrNull(),
+                mcc = resolveMccOrMnc(
+                    sdkInt = Build.VERSION.SDK_INT,
+                    modernValue = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) id.mccString else null,
+                    legacyValue = id.mcc,
+                ),
+                mnc = resolveMccOrMnc(
+                    sdkInt = Build.VERSION.SDK_INT,
+                    modernValue = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) id.mncString else null,
+                    legacyValue = id.mnc,
+                ),
                 lac = id.lac.sanitizeInt(),
                 cid = id.cid.toLong().sanitizeLong(),
                 rssi = signal.dbm,
@@ -63,7 +75,11 @@ class CellScanner @Inject constructor(
                 isRegistered = isRegistered,
                 asuLevel = signal.asuLevel.orNullIfUnavailable(),
                 signalLevel = signal.level,
-                bitErrorRate = signal.bitErrorRate.orNullIfUnavailable(),
+                bitErrorRate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    signal.bitErrorRate.orNullIfUnavailable()
+                } else {
+                    null
+                },
                 timingAdvance = signal.timingAdvance.orNullIfUnavailable(),
             )
         }
@@ -76,8 +92,16 @@ class CellScanner @Inject constructor(
                 latitude = null,
                 longitude = null,
                 altitude = null,
-                mcc = id.mccString?.toIntOrNull(),
-                mnc = id.mncString?.toIntOrNull(),
+                mcc = resolveMccOrMnc(
+                    sdkInt = Build.VERSION.SDK_INT,
+                    modernValue = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) id.mccString else null,
+                    legacyValue = id.mcc,
+                ),
+                mnc = resolveMccOrMnc(
+                    sdkInt = Build.VERSION.SDK_INT,
+                    modernValue = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) id.mncString else null,
+                    legacyValue = id.mnc,
+                ),
                 lac = id.tac.sanitizeInt(),
                 cid = id.ci.toLong().sanitizeLong(),
                 rssi = signal.dbm,
@@ -100,8 +124,16 @@ class CellScanner @Inject constructor(
                 latitude = null,
                 longitude = null,
                 altitude = null,
-                mcc = id.mccString?.toIntOrNull(),
-                mnc = id.mncString?.toIntOrNull(),
+                mcc = resolveMccOrMnc(
+                    sdkInt = Build.VERSION.SDK_INT,
+                    modernValue = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) id.mccString else null,
+                    legacyValue = id.mcc,
+                ),
+                mnc = resolveMccOrMnc(
+                    sdkInt = Build.VERSION.SDK_INT,
+                    modernValue = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) id.mncString else null,
+                    legacyValue = id.mnc,
+                ),
                 lac = id.lac.sanitizeInt(),
                 cid = id.cid.toLong().sanitizeLong(),
                 rssi = signal.dbm,
@@ -109,7 +141,11 @@ class CellScanner @Inject constructor(
                 isRegistered = isRegistered,
                 asuLevel = signal.asuLevel.orNullIfUnavailable(),
                 signalLevel = signal.level,
-                ecNo = signal.ecNo.orNullIfUnavailable(),
+                ecNo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    signal.ecNo.orNullIfUnavailable()
+                } else {
+                    null
+                },
             )
         }
 
@@ -140,6 +176,19 @@ class CellScanner @Inject constructor(
             }
         }
     }
+
+    // The string-based MCC/MNC getters were added in API 28 (P); below that, this
+    // technology's identity class only ever exposed the deprecated Int getter, which
+    // every CellIdentity{Gsm,Lte,Wcdma} subclass has had since well before minSdk 26.
+    // sdkInt is a parameter (rather than reading Build.VERSION.SDK_INT internally) so
+    // this branch logic is unit-testable without Robolectric — see CellScannerTest.
+    @Suppress("DEPRECATION")
+    internal fun resolveMccOrMnc(sdkInt: Int, modernValue: String?, legacyValue: Int): Int? =
+        if (sdkInt >= Build.VERSION_CODES.P) {
+            modernValue?.toIntOrNull()
+        } else {
+            legacyValue.takeIf { it != Int.MAX_VALUE }
+        }
 
     private fun Int.sanitizeInt(): Int = if (this == Int.MAX_VALUE) -1 else this
 

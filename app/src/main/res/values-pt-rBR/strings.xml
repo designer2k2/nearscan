@@ -27,6 +27,8 @@
     <string name="mqtt_topic">Tópico</string>
     <string name="keep_screen_on">Manter tela ligada</string>
     <string name="dedup">Deduplicar</string>
+    <string name="automation_commands">Aceitar comandos de automação (Tasker etc.)</string>
+    <string name="automation_clear_data">Permitir que a automação apague todos os dados</string>
     <string name="capture_ble_advertising_data">Capturar dados de anúncio BLE</string>
     <string name="extra_fields_section">Campos extras registrados</string>
     <string name="extra_battery_level">Nível da bateria</string>

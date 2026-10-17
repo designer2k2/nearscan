@@ -20,6 +20,17 @@
         tools:targetApi="s" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
+    <!-- Bluetooth (Android 8–11). BLUETOOTH_SCAN/_CONNECT don't exist before API 31; there,
+         isEnabled/startDiscovery/startScan need these legacy install-time permissions instead,
+         plus ACCESS_FINE_LOCATION (already requested). Without them BT and BLE scanning throw
+         SecurityException on every round. -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+
     <!-- Cell info -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 

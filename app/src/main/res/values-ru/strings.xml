@@ -27,6 +27,8 @@
     <string name="mqtt_topic">Топик</string>
     <string name="keep_screen_on">Не выключать экран</string>
     <string name="dedup">Дедупликация</string>
+    <string name="automation_commands">Принимать команды автоматизации (Tasker и др.)</string>
+    <string name="automation_clear_data">Разрешить автоматизации удалять все данные</string>
     <string name="capture_ble_advertising_data">Захватывать рекламные данные BLE</string>
     <string name="extra_fields_section">Дополнительные поля</string>
     <string name="extra_battery_level">Уровень заряда батареи</string>

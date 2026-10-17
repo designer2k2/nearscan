@@ -459,6 +459,11 @@ the one library still pinned (1.2.5 is the last release — the project is dorma
 <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
     android:usesPermissionFlags="neverForLocation"/>
 <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+<!-- Android 8–11: BLUETOOTH_SCAN doesn't exist there; discovery/BLE need these instead.
+     Missing until 2026-10 → BT/BLE silently broken on API ≤30. Scanners check
+     RequiredPermissions.forBluetoothScan() (BLUETOOTH_SCAN on 31+, FINE_LOCATION below). -->
+<uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30"/>
+<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30"/>
 
 <!-- Cell towers -->
 <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
@@ -593,6 +598,8 @@ mqtt_topic                (string, default "nearscan/data")
 keep_screen_on            (boolean, default false)
 dedup_enabled             (boolean, default false)
 capture_ble_advertising_data (boolean, default true)  -- BLE service UUIDs + manufacturer data
+automation_commands_enabled   (boolean, default true)   -- master gate for all incoming CMD_*
+automation_clear_data_enabled (boolean, default false)  -- opt-in for destructive CMD_CLEAR_DATA
 extra_battery_level       (boolean, default false)
 extra_battery_charging    (boolean, default false)
 extra_battery_temp        (boolean, default false)
@@ -684,7 +691,7 @@ Tasker task action: **Action › Send Intent**. Set **Package** = `at.designer2k
 | `at.designer2k2.nearscan.CMD_SET_LOCATION` | `lat`, `lon`, `alt` | Update static coordinates (persisted to DataStore) |
 | `at.designer2k2.nearscan.CMD_SET_INTERVAL` | `type` (String: wifi/bt/ble/cell), `interval_sec` | Change a scan interval at runtime |
 
-**Implementation:** `ipc/CommandReceiver.kt` — `BroadcastReceiver`, delegates to `ScanService.start()` / `stop()` for scan control, or a `goAsync()` + `Dispatchers.IO` coroutine calling `SettingsDataStore` for settings mutations (`CMD_SET_LOCATION`, `CMD_SET_INTERVAL`) and `ExportManager` (`CMD_EXPORT`).
+**Implementation:** `ipc/CommandReceiver.kt` — `BroadcastReceiver`; every command runs in one `goAsync()` + `Dispatchers.IO` coroutine that first reads settings and checks `CommandReceiver.isAllowed()` (master "Accept automation commands" switch, default on; `CMD_CLEAR_DATA` additionally needs "Allow automation to clear all data", default off — the receiver is exported with no permission, so this gate is the only protection against arbitrary apps). The coroutine catches all non-cancellation exceptions: its scope has no handler, so an escaping one (e.g. export on a full disk) used to crash the whole process, killing a running scan session too.
 
 - **`lat`/`lon`/`alt`/`interval_sec` accept either a numeric or String extra.** Tasker's Send
   Intent action sends extras as plain strings by default (e.g. `lat:%LOCN`) — reading them with

@@ -32,6 +32,8 @@
     <string name="mqtt_topic">Topic</string>
     <string name="keep_screen_on">Keep screen on</string>
     <string name="dedup">Deduplicate</string>
+    <string name="automation_commands">Accept automation commands (Tasker etc.)</string>
+    <string name="automation_clear_data">Allow automation to clear all data</string>
     <string name="capture_ble_advertising_data">Capture BLE advertising data</string>
     <string name="extra_fields_section">Extra Logged Fields</string>
     <string name="extra_battery_level">Battery level</string>

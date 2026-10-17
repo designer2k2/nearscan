@@ -23,9 +23,13 @@ if it's enabled.
 NearScan has no backend server and transmits nothing by default. The most security-relevant
 surfaces are:
 
-- The exported `ContentProvider` and `BroadcastReceiver` used for automation
-  (`at.designer2k2.nearscan.provider`, the `CMD_*` actions) — guarded by a `normal`-level custom
-  permission, which is a namespace guard rather than a hard boundary.
+- The exported `ContentProvider` used for automation (`at.designer2k2.nearscan.provider`) —
+  guarded by a `normal`-level custom permission, which is a namespace guard rather than a hard
+  boundary.
+- The exported `BroadcastReceiver` for the `CMD_*` actions — reachable by any installed app (no
+  permission, so Tasker & co. can use it). Gated instead by user settings: an "Accept automation
+  commands" switch (default on) and a separate opt-in for the destructive `CMD_CLEAR_DATA`
+  (default off).
 - Files written by the export feature and shared via `FileProvider`.
 - Optional MQTT publishing to a user-configured broker.
 

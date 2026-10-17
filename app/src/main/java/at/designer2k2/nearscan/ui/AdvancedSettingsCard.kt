@@ -23,6 +23,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -231,6 +232,20 @@ fun AdvancedSettingsCard(
                         label = stringResource(R.string.dedup),
                         checked = settings.dedupEnabled,
                         onChange = { onSettingsChange(settings.copy(dedupEnabled = it)) },
+                    )
+
+                    HorizontalDivider()
+
+                    ToggleRow(
+                        label = stringResource(R.string.automation_commands),
+                        checked = settings.automationCommandsEnabled,
+                        onChange = { onSettingsChange(settings.copy(automationCommandsEnabled = it)) },
+                    )
+                    ToggleRow(
+                        label = stringResource(R.string.automation_clear_data),
+                        checked = settings.automationClearDataEnabled,
+                        enabled = settings.automationCommandsEnabled,
+                        onChange = { onSettingsChange(settings.copy(automationClearDataEnabled = it)) },
                     )
 
                     HorizontalDivider()
@@ -463,16 +478,21 @@ private fun ToggleRow(
     label: String,
     checked: Boolean,
     onChange: (Boolean) -> Unit,
+    enabled: Boolean = true,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
+            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = label)
-        Switch(checked = checked, onCheckedChange = null)
+        Text(
+            text = label,
+            modifier = Modifier.weight(1f),
+            color = if (enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+        )
+        Switch(checked = checked, onCheckedChange = null, enabled = enabled)
     }
 }
 

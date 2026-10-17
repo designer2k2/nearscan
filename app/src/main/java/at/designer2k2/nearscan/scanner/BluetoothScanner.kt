@@ -1,6 +1,5 @@
 package at.designer2k2.nearscan.scanner
 
-import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
@@ -10,6 +9,7 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import at.designer2k2.nearscan.db.BtScanEntity
+import at.designer2k2.nearscan.util.RequiredPermissions
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
@@ -30,12 +30,12 @@ class BluetoothScanner @Inject constructor(
     @Suppress("MissingPermission")
     suspend fun scan(): List<BtScanEntity> {
         val adapter = bluetoothAdapter ?: return emptyList()
-        if (!adapter.isEnabled) return emptyList()
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN)
+        if (ContextCompat.checkSelfPermission(context, RequiredPermissions.forBluetoothScan())
             != PackageManager.PERMISSION_GRANTED
         ) {
             return emptyList()
         }
+        if (!runCatching { adapter.isEnabled }.getOrDefault(false)) return emptyList()
 
         val now = System.currentTimeMillis()
         val found = LinkedHashMap<String, BtScanEntity>()

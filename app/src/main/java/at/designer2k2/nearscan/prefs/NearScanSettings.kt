@@ -62,6 +62,13 @@ data class NearScanSettings(
     // fingerprint device models (e.g. wearables) that don't broadcast a recognizable name.
     val captureBleAdvertisingData: Boolean = true,
 
+    // Automation (CommandReceiver). The receiver must stay exported with no permission so Tasker
+    // & co. can reach it, which means ANY installed app can send these commands. Default on so
+    // existing automation setups keep working; the user can lock it down. CMD_CLEAR_DATA is
+    // destructive and irreversible, so it is opt-in on top of that.
+    val automationCommandsEnabled: Boolean = true,
+    val automationClearDataEnabled: Boolean = false,
+
     // Extra logged fields
     val extraBatteryLevel: Boolean = false,
     val extraBatteryCharging: Boolean = false,

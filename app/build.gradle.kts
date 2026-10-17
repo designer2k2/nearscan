@@ -80,6 +80,14 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+        jniLibs {
+            // DataStore ships this for MultiProcessDataStoreFactory only, built with a 2019 NDK
+            // (clang 8) that Play Console flags as a 16 KB-page-size crash risk — even in 1.3.0-rc01
+            // it's still NDK r27. NearScan only uses single-process preferencesDataStore, whose
+            // code path never loads it (only NativeSharedCounter via MultiProcessCoordinator does).
+            // Drop this exclude if multi-process DataStore is ever adopted.
+            excludes += "**/libdatastore_shared_counter.so"
+        }
     }
 
     testOptions {

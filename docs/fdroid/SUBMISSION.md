@@ -82,7 +82,7 @@ The metadata uses:
 
 ```yaml
 UpdateCheckMode: Tags
-AutoUpdateMode: Version v%v
+AutoUpdateMode: Version
 ```
 
 So for each future release you only need to, in this repo:

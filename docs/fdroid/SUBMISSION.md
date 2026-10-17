@@ -12,6 +12,9 @@ build it; a maintainer reviews it, CI builds it, and it goes live.
 | FOSS license, `LICENSE` file in repo | ✅ MIT |
 | Source publicly available, builds with standard tooling | ✅ Gradle wrapper, `./gradlew assembleRelease` |
 | No proprietary dependencies (no GMS / Firebase / analytics / ads) | ✅ verified — Hilt, Room, Compose, Coroutines, Eclipse Paho MQTT (EPL) only |
+| No dependency-metadata signing block in the APK | ✅ `dependenciesInfo { includeInApk = false }` (bundle keeps it for Play) |
+| `fdroid lint` / `rewritemeta` on the recipe | ✅ clean (fdroidserver 2.4.5, 2026-10-17) |
+| `fdroid scanner` on source tree + release APK | ✅ 0 problems, no extra signing blocks (2026-10-17) |
 | No tracking / anti-features | ✅ none. MQTT connects only to a broker the user configures |
 | Versioned git tags | ✅ `vX.Y.Z` (`v0.1.2` tagged) |
 | `versionCode` increments per release | ✅ |

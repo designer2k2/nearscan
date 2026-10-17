@@ -1,0 +1,7 @@
+Bug fixes and safety:
+
+* Bluetooth & BLE scanning now works on Android 8–11 (it silently found nothing before)
+* Cell scanning no longer risks crashing on Android 8.0/8.1
+* "Mobile data active" / "network type" extra fields now actually record
+* New Advanced Settings to control automation commands; clearing data via automation is now opt-in
+* A failed automation export no longer crashes the app

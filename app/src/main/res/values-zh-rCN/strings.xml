@@ -27,6 +27,8 @@
     <string name="mqtt_topic">主题</string>
     <string name="keep_screen_on">保持屏幕常亮</string>
     <string name="dedup">去重</string>
+    <string name="automation_commands">接受自动化命令（Tasker 等）</string>
+    <string name="automation_clear_data">允许自动化清除所有数据</string>
     <string name="capture_ble_advertising_data">捕获BLE广播数据</string>
     <string name="extra_fields_section">额外记录字段</string>
     <string name="extra_battery_level">电池电量</string>

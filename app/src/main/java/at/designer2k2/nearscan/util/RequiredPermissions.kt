@@ -1,6 +1,7 @@
 package at.designer2k2.nearscan.util
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.os.Build
 
 /**
@@ -22,4 +23,19 @@ object RequiredPermissions {
         }
         add(Manifest.permission.READ_PHONE_STATE)
     }
+
+    /**
+     * The runtime permission a Bluetooth Classic / BLE scan needs on this OS version:
+     * `BLUETOOTH_SCAN` on Android 12+, `ACCESS_FINE_LOCATION` before that (`BLUETOOTH_SCAN`
+     * doesn't exist pre-31, so checking it there always reports DENIED).
+     */
+    // BLUETOOTH_SCAN is a compile-time String constant, only returned when sdkInt >= 31; lint
+    // can't see that guard through the sdkInt parameter (kept as a parameter for testability).
+    @SuppressLint("InlinedApi")
+    fun forBluetoothScan(sdkInt: Int = Build.VERSION.SDK_INT): String =
+        if (sdkInt >= Build.VERSION_CODES.S) {
+            Manifest.permission.BLUETOOTH_SCAN
+        } else {
+            Manifest.permission.ACCESS_FINE_LOCATION
+        }
 }

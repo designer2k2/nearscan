@@ -27,6 +27,8 @@
     <string name="mqtt_topic">トピック</string>
     <string name="keep_screen_on">画面を常にオン</string>
     <string name="dedup">重複排除</string>
+    <string name="automation_commands">自動化コマンドを受け付ける（Taskerなど）</string>
+    <string name="automation_clear_data">自動化による全データ消去を許可</string>
     <string name="capture_ble_advertising_data">BLEアドバタイジングデータを取得</string>
     <string name="extra_fields_section">追加ログ項目</string>
     <string name="extra_battery_level">バッテリーレベル</string>

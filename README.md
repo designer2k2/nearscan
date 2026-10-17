@@ -118,6 +118,7 @@ working.
 | Permission | Why NearScan needs it | Notes |
 |---|---|---|
 | `ACCESS_WIFI_STATE`, `CHANGE_WIFI_STATE` | Trigger a WiFi scan and read its results. | `CHANGE_WIFI_STATE` here only permits *starting a scan* — it does not turn WiFi on/off or change networks. |
+| `BLUETOOTH`, `BLUETOOTH_ADMIN` | **Android 8–11 only** (`maxSdkVersion="30"`): the pre-Android-12 equivalent of `BLUETOOTH_SCAN`, needed to run Bluetooth Classic discovery and BLE scans. | Not requested at all on Android 12+. No pairing or connections. |
 | `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION` | Run the scan service reliably for hours or days with the screen off. The `location` type is declared because every logged record is tied to the location you set. | The service **only** starts when you tap START. It never starts itself in the background. |
 | `WAKE_LOCK` | Keep the CPU awake during a scan cycle so sessions don't stall when the screen is off. | A partial wake lock — the screen stays off. |
 | `RECEIVE_BOOT_COMPLETED` | Detect that a reboot interrupted an active session, so the app can offer to resume it on next launch. | Nothing is scanned automatically after boot; you're only shown a prompt. |
@@ -206,7 +207,18 @@ proprietary plugin**. Package name: `at.designer2k2.nearscan`.
 | Automation → app | Send `Intent` (with `package` set) | `CMD_START`, `CMD_STOP`, `CMD_TOGGLE`, `CMD_EXPORT`, `CMD_SET_LOCATION`, `CMD_SET_INTERVAL`, `CMD_CLEAR_DATA` |
 | Automation → app | Content query | `content://at.designer2k2.nearscan.provider/{wifi,bt,cell,stats}` |
 
-All action strings are prefixed `at.designer2k2.nearscan.`. Full details — every extra, every
+All action strings are prefixed `at.designer2k2.nearscan.`.
+
+**Command safety:** the command receiver has to be reachable without a special permission (Tasker
+can't hold custom ones), which means *any* installed app could send these commands. So you're in
+control of them under **Advanced Settings**:
+
+- **Accept automation commands** — on by default; turn it off if you don't use automation and
+  every `CMD_*` broadcast is ignored.
+- **Allow automation to clear all data** — **off by default**. `CMD_CLEAR_DATA` is irreversible, so
+  it's ignored unless you explicitly opt in.
+
+Full details — every extra, every
 column, and worked Tasker recipes — are in the **in-app Help screen** (the **?** icon) and in
 [`CLAUDE.md`](CLAUDE.md).
 

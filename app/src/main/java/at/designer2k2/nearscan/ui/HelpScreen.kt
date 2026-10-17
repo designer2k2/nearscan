@@ -132,7 +132,8 @@ private val taskerReference = listOf(
             "CMD_EXPORT — export now. Extra: format = wigle_csv | custom_csv | geojson | sqlite",
             "CMD_SET_LOCATION — extras: lat, lon, alt (accepts Tasker %variables as strings)",
             "CMD_SET_INTERVAL — extras: type = wifi | bt | ble | cell, interval_sec",
-            "CMD_CLEAR_DATA — permanently deletes all logged WiFi/BT/Cell records",
+            "CMD_CLEAR_DATA — permanently deletes all logged WiFi/BT/Cell records. Ignored unless " +
+                "\"Allow automation to clear all data\" is enabled in Advanced Settings",
         ),
     ),
     TaskerBlock(

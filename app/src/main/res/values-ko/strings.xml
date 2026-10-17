@@ -27,6 +27,8 @@
     <string name="mqtt_topic">주제</string>
     <string name="keep_screen_on">화면 켜짐 유지</string>
     <string name="dedup">중복 제거</string>
+    <string name="automation_commands">자동화 명령 허용 (Tasker 등)</string>
+    <string name="automation_clear_data">자동화로 모든 데이터 삭제 허용</string>
     <string name="capture_ble_advertising_data">BLE 광고 데이터 캡처</string>
     <string name="extra_fields_section">추가 기록 필드</string>
     <string name="extra_battery_level">배터리 잔량</string>

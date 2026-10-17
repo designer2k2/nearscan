@@ -5,7 +5,12 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.content.Context
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import at.designer2k2.nearscan.db.BtScanEntity
+import at.designer2k2.nearscan.util.RequiredPermissions
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.atomic.AtomicBoolean
@@ -18,13 +23,19 @@ import javax.inject.Singleton
  */
 @Singleton
 class BleScanner @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val bluetoothAdapter: BluetoothAdapter?,
 ) {
     @Suppress("MissingPermission")
     suspend fun scan(captureAdvertisingData: Boolean = true): List<BtScanEntity> {
         val adapter = bluetoothAdapter ?: return emptyList()
-        if (!adapter.isEnabled) return emptyList()
-        val scanner = adapter.bluetoothLeScanner ?: return emptyList()
+        if (ContextCompat.checkSelfPermission(context, RequiredPermissions.forBluetoothScan())
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            return emptyList()
+        }
+        if (!runCatching { adapter.isEnabled }.getOrDefault(false)) return emptyList()
+        val scanner = runCatching { adapter.bluetoothLeScanner }.getOrNull() ?: return emptyList()
 
         val now = System.currentTimeMillis()
         val found = LinkedHashMap<String, BtScanEntity>()

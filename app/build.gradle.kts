@@ -84,6 +84,14 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+
+    // AGP embeds an encrypted dependency-metadata block (readable only by Google) in the APK
+    // signing block. F-Droid's scanner flags it, so keep it out of APKs; the Play bundle keeps
+    // it for Play Console's SDK advisories.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = true
+    }
 }
 
 dependencies {

@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
@@ -91,6 +92,16 @@ android {
     dependenciesInfo {
         includeInApk = false
         includeInBundle = true
+    }
+}
+
+// Must match compileOptions above. AGP 9 only derives Kotlin's jvmTarget from compileOptions in
+// its built-in Kotlin mode, which gradle.properties opts out of (android.builtInKotlin=false), so
+// without this Kotlin targets whatever JDK runs the build — JDK 21 (e.g. F-Droid's build server)
+// then fails with "Inconsistent JVM-target compatibility ... (17) and (21)".
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 

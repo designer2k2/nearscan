@@ -1,0 +1,6 @@
+Fixes and privacy:
+
+* START now asks for location permission first instead of failing in the background
+* Automation commands (Tasker etc.) are now off by default on new installs — enable them in Advanced Settings. Existing installs keep their setting
+* Removed the unneeded storage permission
+* Removed an unused native library flagged for 16 KB page-size devices

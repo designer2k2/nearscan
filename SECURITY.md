@@ -28,7 +28,7 @@ surfaces are:
   boundary.
 - The exported `BroadcastReceiver` for the `CMD_*` actions — reachable by any installed app (no
   permission, so Tasker & co. can use it). Gated instead by user settings: an "Accept automation
-  commands" switch (default on) and a separate opt-in for the destructive `CMD_CLEAR_DATA`
+  commands" switch (default off on new installs) and a separate opt-in for the destructive `CMD_CLEAR_DATA`
   (default off).
 - Files written by the export feature and shared via `FileProvider`.
 - Optional MQTT publishing to a user-configured broker.

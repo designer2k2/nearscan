@@ -124,7 +124,8 @@ private data class TaskerBlock(val heading: String, val lines: List<String>)
  */
 private val taskerReference = listOf(
     TaskerBlock(
-        "Send commands — Action › Send Intent, Package: at.designer2k2.nearscan",
+        "Send commands — Action › Send Intent, Package: at.designer2k2.nearscan. " +
+            "First enable \"Accept automation commands\" in Advanced Settings (off by default)",
         listOf(
             "CMD_START — start scanning",
             "CMD_STOP — stop scanning",

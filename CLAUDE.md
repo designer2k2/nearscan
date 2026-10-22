@@ -472,9 +472,8 @@ the one library still pinned (1.2.5 is the last release — the project is dorma
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
 
-<!-- Storage -->
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-    android:maxSdkVersion="28"/>
+<!-- No storage permission: exports use getExternalFilesDir(), which needs none. WRITE_EXTERNAL_STORAGE
+     (maxSdk 28) was removed in 0.1.4 after an F-Droid tester flagged it as unnecessary. -->
 
 <!-- Keep CPU alive -->
 <uses-permission android:name="android.permission.WAKE_LOCK"/>
@@ -598,7 +597,7 @@ mqtt_topic                (string, default "nearscan/data")
 keep_screen_on            (boolean, default false)
 dedup_enabled             (boolean, default false)
 capture_ble_advertising_data (boolean, default true)  -- BLE service UUIDs + manufacturer data
-automation_commands_enabled   (boolean, default true)   -- master gate for all incoming CMD_*
+automation_commands_enabled   (boolean, default false)  -- master gate for all incoming CMD_*; AutomationDefaultMigration writes true for installs upgraded from ≤0.1.3
 automation_clear_data_enabled (boolean, default false)  -- opt-in for destructive CMD_CLEAR_DATA
 extra_battery_level       (boolean, default false)
 extra_battery_charging    (boolean, default false)
@@ -691,7 +690,7 @@ Tasker task action: **Action › Send Intent**. Set **Package** = `at.designer2k
 | `at.designer2k2.nearscan.CMD_SET_LOCATION` | `lat`, `lon`, `alt` | Update static coordinates (persisted to DataStore) |
 | `at.designer2k2.nearscan.CMD_SET_INTERVAL` | `type` (String: wifi/bt/ble/cell), `interval_sec` | Change a scan interval at runtime |
 
-**Implementation:** `ipc/CommandReceiver.kt` — `BroadcastReceiver`; every command runs in one `goAsync()` + `Dispatchers.IO` coroutine that first reads settings and checks `CommandReceiver.isAllowed()` (master "Accept automation commands" switch, default on; `CMD_CLEAR_DATA` additionally needs "Allow automation to clear all data", default off — the receiver is exported with no permission, so this gate is the only protection against arbitrary apps). The coroutine catches all non-cancellation exceptions: its scope has no handler, so an escaping one (e.g. export on a full disk) used to crash the whole process, killing a running scan session too.
+**Implementation:** `ipc/CommandReceiver.kt` — `BroadcastReceiver`; every command runs in one `goAsync()` + `Dispatchers.IO` coroutine that first reads settings and checks `CommandReceiver.isAllowed()` (master "Accept automation commands" switch — default off for new installs since 0.1.4, kept on for upgraded installs via `AutomationDefaultMigration` in SettingsDataStore; `CMD_CLEAR_DATA` additionally needs "Allow automation to clear all data", default off — the receiver is exported with no permission, so this gate is the only protection against arbitrary apps). The coroutine catches all non-cancellation exceptions: its scope has no handler, so an escaping one (e.g. export on a full disk) used to crash the whole process, killing a running scan session too.
 
 - **`lat`/`lon`/`alt`/`interval_sec` accept either a numeric or String extra.** Tasker's Send
   Intent action sends extras as plain strings by default (e.g. `lat:%LOCN`) — reading them with

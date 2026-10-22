@@ -58,6 +58,7 @@
     <string name="export_failed">Ошибка экспорта: %1$s</string>
     <string name="share_export_title">Поделиться экспортом</string>
     <string name="notification_start_blocked">Не удалось запустить сканирование в фоновом режиме. Нажмите, чтобы открыть NearScan и запустить вручную.</string>
+    <string name="notification_location_needed">Для сканирования нужно разрешение на доступ к местоположению. Нажмите, чтобы открыть NearScan и предоставить его.</string>
     <string name="notification_interrupted_by_reboot">Перезагрузка устройства прервала сеанс сканирования. Нажмите, чтобы снова открыть NearScan и продолжить.</string>
     <string name="interrupted_session_title">Сеанс сканирования прерван</string>
     <string name="interrupted_session_message">Ваш последний сеанс сканирования неожиданно завершился — вероятно, из-за перезагрузки устройства или того, что система остановила приложение для экономии заряда батареи. Продолжите с того места, где остановились, или закройте, чтобы завершить.</string>

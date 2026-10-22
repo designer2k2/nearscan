@@ -2,7 +2,10 @@ package at.designer2k2.nearscan.util
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
+import androidx.core.content.ContextCompat
 
 /**
  * Runtime permissions needed for scan functionality (WiFi/BT/BLE/Cell), shared between the
@@ -29,6 +32,17 @@ object RequiredPermissions {
      * `BLUETOOTH_SCAN` on Android 12+, `ACCESS_FINE_LOCATION` before that (`BLUETOOTH_SCAN`
      * doesn't exist pre-31, so checking it there always reports DENIED).
      */
+    /**
+     * A `location`-type foreground service may only be started while FINE or COARSE location is
+     * granted — Android 14+ throws SecurityException from startForeground() otherwise, and since
+     * the service was launched via startForegroundService() the process is then killed for never
+     * reaching the foreground. Check this before ScanService is ever started.
+     */
+    fun hasLocationForForegroundService(context: Context): Boolean =
+        listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION).any {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }
+
     // BLUETOOTH_SCAN is a compile-time String constant, only returned when sdkInt >= 31; lint
     // can't see that guard through the sdkInt parameter (kept as a parameter for testability).
     @SuppressLint("InlinedApi")

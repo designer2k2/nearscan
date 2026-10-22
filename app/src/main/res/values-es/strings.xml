@@ -58,6 +58,7 @@
     <string name="export_failed">Error al exportar: %1$s</string>
     <string name="share_export_title">Compartir exportación</string>
     <string name="notification_start_blocked">No se pudo iniciar el escaneo en segundo plano. Toca para abrir NearScan e iniciar manualmente.</string>
+    <string name="notification_location_needed">Se necesita el permiso de ubicación para escanear. Toca para abrir NearScan y concederlo.</string>
     <string name="notification_interrupted_by_reboot">Un reinicio del dispositivo interrumpió tu sesión de escaneo. Toca para reabrir NearScan y continuar.</string>
     <string name="interrupted_session_title">Sesión de escaneo interrumpida</string>
     <string name="interrupted_session_message">Tu última sesión de escaneo terminó inesperadamente, probablemente por un reinicio del dispositivo o porque el sistema detuvo la app para ahorrar batería. Continúa donde quedó o descarta para finalizarla.</string>

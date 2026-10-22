@@ -58,6 +58,7 @@
     <string name="export_failed">\u00c9chec de l\'exportation : %1$s</string>
     <string name="share_export_title">Partager l\'export</string>
     <string name="notification_start_blocked">Impossible de démarrer l\'analyse en arrière-plan. Appuyez pour ouvrir NearScan et démarrer manuellement.</string>
+    <string name="notification_location_needed">L\'autorisation de localisation est nécessaire pour analyser. Appuyez pour ouvrir NearScan et l\'accorder.</string>
     <string name="notification_interrupted_by_reboot">Un redémarrage de l\'appareil a interrompu votre session d\'analyse. Appuyez pour rouvrir NearScan et reprendre.</string>
     <string name="interrupted_session_title">Session d\'analyse interrompue</string>
     <string name="interrupted_session_message">Votre dernière session d\'analyse s\'est terminée de manière inattendue — probablement un redémarrage de l\'appareil ou le système ayant arrêté l\'app pour économiser la batterie. Reprenez où elle s\'est arrêtée, ou ignorez pour y mettre fin.</string>

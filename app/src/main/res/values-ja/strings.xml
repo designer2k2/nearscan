@@ -58,6 +58,7 @@
     <string name="export_failed">エクスポート失敗: %1$s</string>
     <string name="share_export_title">エクスポートを共有</string>
     <string name="notification_start_blocked">バックグラウンドでスキャンを開始できませんでした。タップしてNearScanを開き、手動で開始してください。</string>
+    <string name="notification_location_needed">スキャンには位置情報の権限が必要です。タップしてNearScanを開き、許可してください。</string>
     <string name="notification_interrupted_by_reboot">デバイスの再起動によりスキャンセッションが中断されました。タップしてNearScanを再度開き、再開してください。</string>
     <string name="interrupted_session_title">スキャンセッションが中断されました</string>
     <string name="interrupted_session_message">前回のスキャンセッションは予期せず終了しました。デバイスの再起動、またはバッテリー節約のためシステムがアプリを停止した可能性があります。中断した所から再開するか、終了するには閉じてください。</string>

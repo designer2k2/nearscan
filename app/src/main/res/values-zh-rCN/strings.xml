@@ -58,6 +58,7 @@
     <string name="export_failed">导出失败：%1$s</string>
     <string name="share_export_title">分享导出</string>
     <string name="notification_start_blocked">无法在后台启动扫描。点击以打开NearScan并手动启动。</string>
+    <string name="notification_location_needed">扫描需要位置权限。点击以打开NearScan并授予权限。</string>
     <string name="notification_interrupted_by_reboot">设备重启中断了您的扫描会话。点击以重新打开NearScan并继续。</string>
     <string name="interrupted_session_title">扫描会话已中断</string>
     <string name="interrupted_session_message">您上次的扫描会话意外结束——可能是设备重启，或系统为节省电量而停止了应用。可以从中断处继续，或点击关闭以结束该会话。</string>

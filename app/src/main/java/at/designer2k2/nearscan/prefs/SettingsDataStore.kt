@@ -1,6 +1,7 @@
 package at.designer2k2.nearscan.prefs
 
 import android.content.Context
+import androidx.datastore.core.DataMigration
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -17,7 +18,33 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "nearscan_settings")
+private val AUTOMATION_COMMANDS_KEY = booleanPreferencesKey("automation_commands_enabled")
+
+/**
+ * "Accept automation commands" defaulted to ON in 0.1.3 and to OFF from 0.1.4 (an F-Droid review
+ * pointed out that any installed app could command a fresh install). Rather than letting the new
+ * default silently disable existing users' Tasker setups, this writes an explicit value the first
+ * time the store is opened without one: `true` for an install that already has saved settings
+ * (i.e. it ran a previous version), `false` for a brand-new one. Once the key exists it never
+ * runs again — including for a fresh install that later saves other settings, which a "key
+ * missing && store non-empty" check alone would wrongly flip to `true` on the next launch.
+ */
+internal object AutomationDefaultMigration : DataMigration<Preferences> {
+    override suspend fun shouldMigrate(currentData: Preferences): Boolean =
+        currentData[AUTOMATION_COMMANDS_KEY] == null
+
+    override suspend fun migrate(currentData: Preferences): Preferences =
+        currentData.toMutablePreferences().apply {
+            this[AUTOMATION_COMMANDS_KEY] = currentData.asMap().isNotEmpty()
+        }.toPreferences()
+
+    override suspend fun cleanUp() = Unit
+}
+
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "nearscan_settings",
+    produceMigrations = { listOf(AutomationDefaultMigration) },
+)
 
 /** DataStore-backed wrapper exposing [NearScanSettings] as a [Flow] plus update helpers. */
 @Singleton
@@ -53,7 +80,7 @@ class SettingsDataStore @Inject constructor(
         val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
         val DEDUP = booleanPreferencesKey("dedup_enabled")
         val CAPTURE_BLE_ADV_DATA = booleanPreferencesKey("capture_ble_advertising_data")
-        val AUTOMATION_COMMANDS = booleanPreferencesKey("automation_commands_enabled")
+        val AUTOMATION_COMMANDS = AUTOMATION_COMMANDS_KEY
         val AUTOMATION_CLEAR_DATA = booleanPreferencesKey("automation_clear_data_enabled")
 
         // Deliberately outside NearScanSettings/update(): this tracks whether a scan session is

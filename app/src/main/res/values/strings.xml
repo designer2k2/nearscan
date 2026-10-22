@@ -58,6 +58,7 @@
     <string name="no_location_set">No location set</string>
     <string name="notification_counts">WiFi: %1$d  BT: %2$d  Cell: %3$d  •  %4$s</string>
     <string name="notification_start_blocked">Couldn\'t start scanning in the background. Tap to open NearScan and start manually.</string>
+    <string name="notification_location_needed">Location permission is needed to scan. Tap to open NearScan and grant it.</string>
     <string name="notification_interrupted_by_reboot">A device restart interrupted your scan session. Tap to reopen NearScan and resume.</string>
     <string name="interrupted_session_title">Scan session interrupted</string>
     <string name="interrupted_session_message">Your last scan session ended unexpectedly — likely a device restart or the system stopping the app to save battery. Resume where it left off, or dismiss to end it.</string>

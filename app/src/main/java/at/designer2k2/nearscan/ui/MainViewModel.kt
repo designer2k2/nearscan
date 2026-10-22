@@ -213,11 +213,6 @@ class MainViewModel @Inject constructor(
         _uiState.update { it.copy(exportResult = null) }
     }
 
-    /** Restarts the service; it reads the still-active persisted session and resumes it. */
-    fun resumeInterruptedSession() {
-        ScanService.start(getApplication())
-    }
-
     /** Ends the stale session bookkeeping without restarting scanning. */
     fun dismissInterruptedSession() {
         viewModelScope.launch {

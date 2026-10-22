@@ -33,6 +33,7 @@ import at.designer2k2.nearscan.scanner.BleScanner
 import at.designer2k2.nearscan.scanner.BluetoothScanner
 import at.designer2k2.nearscan.scanner.CellScanner
 import at.designer2k2.nearscan.scanner.WifiScanner
+import at.designer2k2.nearscan.util.RequiredPermissions
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -102,6 +103,13 @@ class ScanService : Service() {
                 stopScanning()
                 return START_NOT_STICKY
             }
+        }
+        if (!RequiredPermissions.hasLocationForForegroundService(this)) {
+            // E.g. a START_STICKY restart after the user revoked location. start() already refuses
+            // to launch us without it; this covers the paths that bypass start().
+            Log.w("ScanService", "Not starting: location permission not granted")
+            stopSelf()
+            return START_NOT_STICKY
         }
         try {
             startForegroundNotification()
@@ -502,7 +510,24 @@ class ScanService : Service() {
         private val status = MutableStateFlow(ScanStatus())
         val statusFlow: StateFlow<ScanStatus> = status.asStateFlow()
 
+        /**
+         * Single entry point for every start path (START button, Tasker CMD_START/CMD_TOGGLE,
+         * resuming an interrupted session). Refuses to launch without location permission:
+         * starting the `location`-type foreground service before the grant is effective makes
+         * startForeground() throw and the process gets killed (reported by an F-Droid tester as
+         * 14 SecurityExceptions plus a mid-run restart on a fresh install). The UI requests the
+         * permission before calling this; headless callers get a tap-to-open notification.
+         */
         fun start(context: Context) {
+            if (!RequiredPermissions.hasLocationForForegroundService(context)) {
+                Log.w("ScanService", "start() refused: location permission not granted")
+                postTapToOpenNotification(
+                    context,
+                    NOTIFICATION_ID_BLOCKED,
+                    context.getString(R.string.notification_location_needed),
+                )
+                return
+            }
             val intent = Intent(context, ScanService::class.java)
             try {
                 context.startForegroundService(intent)

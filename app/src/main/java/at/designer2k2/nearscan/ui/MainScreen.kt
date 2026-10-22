@@ -36,6 +36,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -114,6 +116,26 @@ fun MainScreen(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // START without location permission would launch the location-type foreground service before
+    // the grant is effective (ScanService.start() refuses that). Ask instead, and start once
+    // granted. If the user has permanently denied it, the missing-permission banner above offers
+    // the Settings shortcut.
+    val startPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) {
+        missingPermissions = RequiredPermissions.forScanning().filter {
+            ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (RequiredPermissions.hasLocationForForegroundService(context)) viewModel.startScan()
+    }
+    val onStartRequested = {
+        if (RequiredPermissions.hasLocationForForegroundService(context)) {
+            viewModel.startScan()
+        } else {
+            startPermissionLauncher.launch(RequiredPermissions.forScanning().toTypedArray())
+        }
     }
 
     LaunchedEffect(state.exportResult) {
@@ -247,7 +269,7 @@ fun MainScreen(
 
             StartStopButton(
                 isRunning = state.isRunning,
-                onStart = viewModel::startScan,
+                onStart = onStartRequested,
                 onStop = viewModel::stopScan,
             )
 
@@ -312,7 +334,9 @@ fun MainScreen(
             title = { Text(stringResource(R.string.interrupted_session_title)) },
             text = { Text(stringResource(R.string.interrupted_session_message)) },
             confirmButton = {
-                TextButton(onClick = viewModel::resumeInterruptedSession) {
+                // Same path as START: resuming is just ScanService.start() picking up the
+                // still-active persisted session, so it needs the same permission handling.
+                TextButton(onClick = onStartRequested) {
                     Text(stringResource(R.string.interrupted_session_resume))
                 }
             },

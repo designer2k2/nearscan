@@ -38,10 +38,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
-    <!-- Legacy export storage -->
-    <uses-permission
-        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" />
+    <!-- No storage permission: exports go to the app-specific external dir
+         (getExternalFilesDir), which needs none on any supported Android version. -->
 
     <!-- Keep CPU alive -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />

@@ -58,6 +58,7 @@
     <string name="export_failed">Export fehlgeschlagen: %1$s</string>
     <string name="share_export_title">Export teilen</string>
     <string name="notification_start_blocked">Scannen konnte nicht im Hintergrund gestartet werden. Tippen, um NearScan zu öffnen und manuell zu starten.</string>
+    <string name="notification_location_needed">Für das Scannen wird die Standortberechtigung benötigt. Tippen, um NearScan zu öffnen und sie zu erteilen.</string>
     <string name="notification_interrupted_by_reboot">Ein Geräteneustart hat deine Scan-Sitzung unterbrochen. Tippen, um NearScan wieder zu öffnen und fortzusetzen.</string>
     <string name="interrupted_session_title">Scan-Sitzung unterbrochen</string>
     <string name="interrupted_session_message">Deine letzte Scan-Sitzung wurde unerwartet beendet — wahrscheinlich durch einen Geräteneustart oder weil das System die App zum Energiesparen gestoppt hat. Dort fortsetzen, wo sie aufgehört hat, oder beenden.</string>

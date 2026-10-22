@@ -63,10 +63,11 @@ data class NearScanSettings(
     val captureBleAdvertisingData: Boolean = true,
 
     // Automation (CommandReceiver). The receiver must stay exported with no permission so Tasker
-    // & co. can reach it, which means ANY installed app can send these commands. Default on so
-    // existing automation setups keep working; the user can lock it down. CMD_CLEAR_DATA is
-    // destructive and irreversible, so it is opt-in on top of that.
-    val automationCommandsEnabled: Boolean = true,
+    // & co. can reach it, which means ANY installed app can send these commands — so it's off
+    // for fresh installs and the user opts in. (Installs from before 0.1.4, when it defaulted on,
+    // are migrated to an explicit `true` by AutomationDefaultMigration so their automations keep
+    // working.) CMD_CLEAR_DATA is destructive and irreversible, so it is opt-in on top of that.
+    val automationCommandsEnabled: Boolean = false,
     val automationClearDataEnabled: Boolean = false,
 
     // Extra logged fields

@@ -17,20 +17,24 @@ class CommandReceiverGateTest {
     )
 
     @Test
-    fun `defaults allow non-destructive commands so existing Tasker setups keep working`() {
+    fun `defaults block every command so a fresh install can't be driven by other apps`() {
         val defaults = NearScanSettings()
-        nonDestructive.forEach { assertTrue(it, CommandReceiver.isAllowed(it, defaults)) }
+        (nonDestructive + CommandReceiver.ACTION_CLEAR_DATA).forEach {
+            assertFalse(it, CommandReceiver.isAllowed(it, defaults))
+        }
     }
 
     @Test
-    fun `defaults block CMD_CLEAR_DATA`() {
-        assertFalse(CommandReceiver.isAllowed(CommandReceiver.ACTION_CLEAR_DATA, NearScanSettings()))
+    fun `opting in allows non-destructive commands but still blocks CMD_CLEAR_DATA`() {
+        val optedIn = NearScanSettings(automationCommandsEnabled = true)
+        nonDestructive.forEach { assertTrue(it, CommandReceiver.isAllowed(it, optedIn)) }
+        assertFalse(CommandReceiver.isAllowed(CommandReceiver.ACTION_CLEAR_DATA, optedIn))
     }
 
     @Test
-    fun `CMD_CLEAR_DATA allowed only after explicit opt-in`() {
-        val optedIn = NearScanSettings(automationClearDataEnabled = true)
-        assertTrue(CommandReceiver.isAllowed(CommandReceiver.ACTION_CLEAR_DATA, optedIn))
+    fun `CMD_CLEAR_DATA allowed only with both opt-ins`() {
+        val both = NearScanSettings(automationCommandsEnabled = true, automationClearDataEnabled = true)
+        assertTrue(CommandReceiver.isAllowed(CommandReceiver.ACTION_CLEAR_DATA, both))
     }
 
     @Test
